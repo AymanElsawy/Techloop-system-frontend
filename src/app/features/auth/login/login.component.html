@@ -1,0 +1,59 @@
+<main class="flex min-h-screen items-center justify-center bg-yale-blue p-4 dark:bg-prussian-blue-300">
+  <div class="w-full max-w-sm rounded-2xl bg-alabaster-grey-800 p-8 shadow-xl">
+    <div class="mb-8 text-center">
+      <div class="mx-auto mb-3 flex size-14 items-center justify-center rounded-xl bg-stormy-teal text-2xl font-bold text-white dark:bg-orange dark:text-black" aria-hidden="true">
+        VP
+      </div>
+      <p class="text-sm font-semibold tracking-wide text-vibrant-coral-400" dir="ltr">Veterinary Pharma</p>
+      <h1 class="mt-1 text-2xl font-bold text-yale-blue">تسجيل الدخول</h1>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-5">
+      <div>
+        <label for="email" class="form-label">البريد الإلكتروني</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="form-input"
+          dir="ltr"
+          autocomplete="email"
+          [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+          aria-describedby="email-error"
+        />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p id="email-error" class="form-error">
+            {{ form.controls.email.hasError('required') ? 'البريد الإلكتروني مطلوب.' : 'صيغة البريد الإلكتروني غير صحيحة.' }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label for="password" class="form-label">كلمة المرور</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          class="form-input"
+          dir="ltr"
+          autocomplete="current-password"
+          [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+          aria-describedby="password-error"
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p id="password-error" class="form-error">
+            {{ form.controls.password.hasError('required') ? 'كلمة المرور مطلوبة.' : 'كلمة المرور 8 أحرف على الأقل.' }}
+          </p>
+        }
+      </div>
+
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || loading()">
+        {{ loading() ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول' }}
+      </button>
+
+      @if (error(); as message) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+      }
+    </form>
+  </div>
+</main>

@@ -1,0 +1,44 @@
+<section class="space-y-6">
+  <a routerLink="/treasury" class="text-sm text-stormy-teal hover:underline">→ العودة إلى الخزنة</a>
+  <div>
+    <h1 class="text-2xl font-bold">استلام من {{ repName() || 'المندوب' }}</h1>
+    <p class="mt-1 text-stormy-teal">علّم على الفلوس والشيكات اللي استلمتها فعلًا. مديونية العملاء بتنزل بعد الحفظ.</p>
+  </div>
+
+  @if (pending.isLoading() && !pending.hasValue()) {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  } @else if (pending.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="pending.reload()" />
+  } @else if (!pending.value()?.length) {
+    <app-status-message type="empty" message="مفيش فلوس مع المندوب ده لم تُسلَّم." />
+  } @else {
+    <app-payments-table [payments]="pending.value()!" [selectable]="true" [(selected)]="selected" />
+
+    <div class="card space-y-4">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p class="text-sm text-stormy-teal">إجمالي المستلم ({{ chosen().length }} من {{ pending.value()!.length }})</p>
+          <p class="mt-1 text-2xl font-bold tabular-nums">{{ chosenTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        </div>
+        <ul class="space-y-1 text-sm">
+          @for (m of chosenByMethod(); track m.method) {
+            <li class="flex justify-between gap-6">
+              <span class="text-stormy-teal">{{ methodLabels[m.method] }} ({{ m.count }})</span>
+              <span class="font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      <div>
+        <label for="notes" class="form-label">ملاحظات</label>
+        <input id="notes" class="form-input" [value]="notes()" (input)="notes.set($any($event.target).value)" placeholder="مثلاً: الشيكات اتسلمت للمحاسب" />
+      </div>
+      @if (error()) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ error() }}</p>
+      }
+      <button type="button" class="btn-primary w-full" [disabled]="!chosen().length || saving()" (click)="submit()">
+        {{ saving() ? 'جاري الحفظ...' : 'تأكيد الاستلام' }}
+      </button>
+    </div>
+  }
+</section>

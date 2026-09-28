@@ -1,0 +1,160 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">المخزن</h1>
+    @if (isManager) {
+      <button type="button" class="btn-primary" (click)="newDialog.showModal()">صنف جديد</button>
+    }
+  </div>
+
+  <!-- Brand-new product, or more stock of an existing one from another supplier (receipt updates the average cost). -->
+  <dialog #newDialog aria-labelledby="new-dialog-title"
+    class="card m-auto w-[min(26rem,calc(100%-2rem))] space-y-3 text-inherit backdrop:bg-black/60">
+    <h2 id="new-dialog-title" class="text-lg font-bold">إضافة صنف</h2>
+    <a routerLink="/inventory/products/new" class="block rounded-lg border border-stormy-teal-800 p-4 hover:bg-alabaster-grey-800"
+      (click)="newDialog.close()">
+      <p class="font-semibold">صنف جديد</p>
+      <p class="text-sm text-stormy-teal">صنف أول مرة يدخل المخزن.</p>
+    </a>
+    <a routerLink="/inventory/receive" class="block rounded-lg border border-stormy-teal-800 p-4 hover:bg-alabaster-grey-800"
+      (click)="newDialog.close()">
+      <p class="font-semibold">صنف موجود من مورد آخر</p>
+      <p class="text-sm text-stormy-teal">زوّد الكمية بسعر المورد الجديد، ومتوسط السعر يتحسب تلقائي.</p>
+    </a>
+    <button type="button" class="btn-outline w-full" (click)="newDialog.close()">إلغاء</button>
+  </dialog>
+  <app-inventory-tabs />
+
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="search">بحث</label>
+    <input
+      id="search"
+      type="search"
+      class="form-input w-full sm:w-64"
+      placeholder="بحث بالاسم أو الكود أو الشركة"
+      [value]="search()"
+      (input)="search.set(inputValue($event))"
+    />
+
+    <label class="sr-only" for="unit-filter">الوحدة</label>
+    <select id="unit-filter" class="form-input w-auto" [value]="unit()" (change)="setUnit($event)">
+      <option value="">كل الوحدات</option>
+      @for (u of units; track u) {
+        <option [value]="u">{{ unitLabels[u] }}</option>
+      }
+    </select>
+
+    @if (isManager) {
+      <label class="sr-only" for="active-filter">الحالة</label>
+      <select id="active-filter" class="form-input w-auto" [value]="active()" (change)="setActive($event)">
+        <option value="true">الأصناف النشطة</option>
+        <option value="false">الأصناف الموقوفة</option>
+        <option value="">الكل</option>
+      </select>
+    }
+
+    <label class="flex cursor-pointer items-center gap-2 text-sm">
+      <input type="checkbox" class="size-4 accent-vibrant-coral-400" [checked]="lowStock()" (change)="toggleLowStock($event)" />
+      كمية منخفضة فقط
+    </label>
+
+    @if (hasFilters()) {
+      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+    }
+  </div>
+
+  @if (products.isLoading() && !products.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الأصناف..." />
+  } @else if (products.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الأصناف." (retry)="products.reload()" />
+  } @else if (!products.value()?.length) {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد أصناف مطابقة للبحث.' : 'لا توجد أصناف بعد.'" />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">الصنف</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الوحدة</th>
+            <th scope="col" class="px-4 py-3 font-semibold">سعر البيع</th>
+            @if (isManager) {
+              <th scope="col" class="px-4 py-3 font-semibold">متوسط الشراء</th>
+              <th scope="col" class="px-4 py-3 font-semibold">آخر شراء</th>
+            }
+            <th scope="col" class="px-4 py-3 font-semibold">الكمية الإجمالية</th>
+            <th scope="col" class="px-4 py-3 font-semibold">تاريخ الصلاحية</th>
+            @if (isManager) {
+              <th scope="col" class="px-4 py-3"><span class="sr-only">إجراءات</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (p of products.value(); track p.id) {
+            <tr [class.opacity-60]="!p.isActive">
+              <td class="px-4 py-3">
+                <p class="font-semibold">
+                  {{ p.name }}
+                  @if (!p.isActive) {
+                    <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
+                  }
+                </p>
+                <p class="text-xs text-stormy-teal">
+                  @if (p.code) {
+                    <span dir="ltr">{{ p.code }}</span>
+                  }
+                  {{ p.code && p.manufacturer ? ' · ' : '' }}{{ p.manufacturer }}
+                </p>
+              </td>
+              <td class="px-4 py-3">{{ p.unit ? unitLabels[p.unit] : '—' }}</td>
+              <td class="whitespace-nowrap px-4 py-3">{{ p.price | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              @if (isManager) {
+                <td class="whitespace-nowrap px-4 py-3">{{ p.avgCost != null ? (p.avgCost | currency: 'EGP' : 'symbol' : '1.0-2') : '—' }}</td>
+                <td class="px-4 py-3">
+                  @if (p.lastCost != null) {
+                    <p class="whitespace-nowrap">{{ p.lastCost | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                    @if (p.lastSupplier) {
+                      <a [routerLink]="['/suppliers', p.lastSupplier.id]" class="block whitespace-nowrap text-xs text-stormy-teal hover:text-vibrant-coral-400 hover:underline">{{ p.lastSupplier.name }}</a>
+                    }
+                    @if (p.lastPurchaseAt) {
+                      <p class="whitespace-nowrap text-xs text-stormy-teal">{{ p.lastPurchaseAt | date: 'd MMM y' }}</p>
+                    }
+                  } @else {
+                    —
+                  }
+                </td>
+              }
+              <td class="whitespace-nowrap px-4 py-3">
+                <span class="font-semibold">{{ p.quantity }}</span>
+                @if (isLowStock(p)) {
+                  <span class="ms-1 rounded-full bg-soft-apricot-800 px-2 py-0.5 text-xs font-medium text-soft-apricot-200">منخفضة</span>
+                }
+              </td>
+              <td class="whitespace-nowrap px-4 py-3">
+                @if (p.expiryDate) {
+                  {{ p.expiryDate | date: 'd MMM y' }}
+                  @switch (expiryState(p.expiryDate)) {
+                    @case ('expired') {
+                      <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">منتهي</span>
+                    }
+                    @case ('soon') {
+                      <span class="ms-1 rounded-full bg-soft-apricot-800 px-2 py-0.5 text-xs font-medium text-soft-apricot-200">قريب الانتهاء</span>
+                    }
+                  }
+                } @else {
+                  —
+                }
+              </td>
+              @if (isManager) {
+                <td class="px-4 py-3">
+                  <a [routerLink]="['/inventory/products', p.id, 'edit']" class="me-3 text-sm font-medium text-vibrant-coral-400 hover:underline">تعديل</a>
+                  @if (p.isActive) {
+                    <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline">وارد</a>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

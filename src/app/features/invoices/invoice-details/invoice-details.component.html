@@ -1,0 +1,146 @@
+<section class="space-y-6">
+  @if (invoice.value(); as inv) {
+    <div class="flex flex-wrap gap-4 text-sm">
+      <a [routerLink]="['/customers', inv.customer.id]" class="text-stormy-teal hover:underline">→ العودة إلى العميل</a>
+      @if (inv.visit) {
+        <a [routerLink]="['/visits', inv.visit.id]" class="text-vibrant-coral-400 hover:underline">→ العودة إلى الزيارة</a>
+      }
+    </div>
+  }
+
+  @if (invoice.isLoading() && !invoice.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الفاتورة..." />
+  } @else if (invoice.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الفاتورة." (retry)="invoice.reload()" />
+  } @else if (invoice.value(); as inv) {
+    @if (uploadFailedOnCreate) {
+      <p role="alert" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+        تم حفظ الفاتورة، لكن تعذر رفع المرفقات. ارفعها مرة أخرى من قسم المرفقات.
+      </p>
+    }
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold">فاتورة رقم <span dir="ltr">{{ inv.invoiceNumber }}</span></h1>
+        @if (inv.status === Status.CANCELLED) {
+          <span class="rounded-full bg-vibrant-coral-900 px-3 py-1 text-sm font-medium text-vibrant-coral-300">ملغاة</span>
+        } @else if (inv.paidAmount > 0) {
+          <app-deposit-badge [entry]="inv" />
+        }
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a [routerLink]="['/documents/SALE', inv.id]" class="btn-primary">طباعة / PDF</a>
+        @if (inv.status === Status.ACTIVE) {
+          <a [routerLink]="['/customers', inv.customer.id, 'returns', 'new']" [queryParams]="{ invoiceId: inv.id }" class="btn-outline">مرتجع من الفاتورة</a>
+        }
+        @if (isManager && inv.status === Status.ACTIVE && !showCancel()) {
+          <button type="button" class="btn-outline" (click)="showCancel.set(true)">إلغاء الفاتورة</button>
+        }
+      </div>
+    </div>
+
+    @if (showCancel()) {
+      <div class="card space-y-3">
+        <label for="cancel-reason" class="form-label">سبب الإلغاء</label>
+        <textarea id="cancel-reason" rows="2" class="form-input" [formControl]="cancelReason"></textarea>
+        <p class="text-xs text-stormy-teal">الإلغاء يرجع الكميات للمخزون ويحذف المبلغ من رصيد العميل.</p>
+        <div class="flex gap-3">
+          <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
+          <button type="button" class="btn-outline" (click)="showCancel.set(false)">رجوع</button>
+        </div>
+        @if (cancelError(); as message) {
+          <p role="alert" class="form-error">{{ message }}</p>
+        }
+      </div>
+    }
+
+    @if (inv.status === Status.CANCELLED) {
+      <p role="note" class="rounded-lg bg-vibrant-coral-900 px-4 py-3 text-sm text-vibrant-coral-300">
+        ألغاها {{ inv.cancelledBy?.name }} بتاريخ {{ inv.cancelledAt | date: 'd MMMM y' }}. السبب: {{ inv.cancelReason }}
+      </p>
+    }
+
+    <dl class="card grid gap-5 sm:grid-cols-3">
+      <div>
+        <dt class="text-sm text-stormy-teal">العميل</dt>
+        <dd class="mt-1 font-semibold">
+          <a [routerLink]="['/customers', inv.customer.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ inv.customer.name }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">المندوب</dt>
+        <dd class="mt-1 font-semibold">{{ inv.createdBy.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">التاريخ</dt>
+        <dd class="mt-1 font-semibold">{{ inv.createdAt | date: 'd MMMM y · HH:mm' }}</dd>
+      </div>
+      @if (inv.warehouse) {
+        <div>
+          <dt class="text-sm text-stormy-teal">المخزن</dt>
+          <dd class="mt-1 font-semibold">{{ inv.warehouse.name }}</dd>
+        </div>
+      }
+    </dl>
+
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">الصنف</th>
+            <th scope="col" class="px-4 py-3 font-semibold">السعر</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الكمية</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (item of inv.items; track item.product) {
+            <tr>
+              <td class="px-4 py-3">{{ item.name }}{{ item.unit ? ' (' + unitLabels[item.unit] + ')' : '' }}</td>
+              <td class="whitespace-nowrap px-4 py-3">{{ item.unitPrice | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="px-4 py-3">{{ item.quantity }}</td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ item.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="card">
+        <p class="text-sm text-stormy-teal">إجمالي الفاتورة</p>
+        <p class="mt-2 text-xl font-bold">{{ inv.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">المدفوع · {{ paymentLabel() }}</p>
+        <p class="mt-2 text-xl font-bold">{{ inv.paidAmount | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        @if (inv.paymentMethod === PaymentMethod.CHEQUE) {
+          <p class="mt-1 text-xs text-stormy-teal">
+            شيك رقم <span dir="ltr">{{ inv.chequeNumber ?? '—' }}</span>
+            @if (inv.chequeDueDate) {
+              · يستحق {{ inv.chequeDueDate | date: 'd MMM y' }}
+            }
+          </p>
+        }
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">المتبقي</p>
+        <p class="mt-2 text-xl font-bold text-vibrant-coral-400">{{ inv.remaining | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        @if (inv.previousDebtPaid > 0) {
+          <p class="mt-1 text-xs text-yale-blue-600">
+            + {{ inv.previousDebtPaid | currency: 'EGP' : 'symbol' : '1.0-2' }} دُفعت لسداد مديونية سابقة
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (inv.notes) {
+      <div class="card">
+        <p class="text-sm text-stormy-teal">ملاحظات</p>
+        <p class="mt-1 whitespace-pre-line">{{ inv.notes }}</p>
+      </div>
+    }
+
+    <app-attachments [attachments]="inv.attachments" [download]="downloadFn" [upload]="uploadFn" />
+  }
+</section>

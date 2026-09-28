@@ -1,0 +1,95 @@
+<section class="mx-auto max-w-3xl space-y-6">
+  @if (doc.isLoading() && !doc.hasValue()) {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  } @else if (doc.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="doc.reload()" />
+  } @else if (doc.value(); as r) {
+    <a [routerLink]="['/customers', r.customer.id]" class="text-sm text-stormy-teal hover:underline">→ {{ r.customer.name }}</a>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold">فاتورة مرتجع رقم {{ r.number }}</h1>
+        @if (r.status === Status.CANCELLED) {
+          <span class="rounded-full bg-vibrant-coral-900 px-3 py-1 text-sm font-medium text-vibrant-coral-300">ملغاة</span>
+        }
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a [routerLink]="['/documents/SALE_RETURN', r.id]" class="btn-primary">طباعة / PDF</a>
+        @if (isManager && r.status === Status.ACTIVE && !showCancel()) {
+          <button type="button" class="btn-outline" (click)="showCancel.set(true)">إلغاء المرتجع</button>
+        }
+      </div>
+    </div>
+
+    @if (showCancel()) {
+      <div class="card space-y-3">
+        <p class="text-sm">إلغاء المرتجع بيرجع قيمته على مديونية العميل، وبيسحب البضاعة تاني من {{ r.rep ? 'عهدة ' + r.rep.name : 'المخزن' }}.</p>
+        <label for="cancel-reason" class="form-label">سبب الإلغاء</label>
+        <textarea id="cancel-reason" rows="2" class="form-input" [formControl]="cancelReason"></textarea>
+        <div class="flex gap-2">
+          <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
+          <button type="button" class="btn-outline" (click)="showCancel.set(false)">رجوع</button>
+        </div>
+        @if (cancelError(); as message) {
+          <p role="alert" class="text-sm text-vibrant-coral-400">{{ message }}</p>
+        }
+      </div>
+    }
+    @if (r.status === Status.CANCELLED) {
+      <p class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">
+        ألغاه {{ r.cancelledBy?.name }} بتاريخ {{ r.cancelledAt | date: 'd MMMM y' }}. السبب: {{ r.cancelReason }}
+      </p>
+    }
+
+    <dl class="card grid gap-5 sm:grid-cols-4">
+      <div>
+        <dt class="text-sm text-stormy-teal">من فاتورة بيع</dt>
+        <dd class="mt-1 font-semibold">
+          <a [routerLink]="['/invoices', r.invoice.id]" class="hover:underline" dir="ltr">{{ r.invoice.invoiceNumber }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">التاريخ</dt>
+        <dd class="mt-1 font-semibold">{{ r.createdAt | date: 'd/M/y h:mm a' }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">سجّله</dt>
+        <dd class="mt-1 font-semibold">{{ r.createdBy.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">البضاعة رجعت</dt>
+        <dd class="mt-1 font-semibold">{{ r.rep ? 'عهدة ' + r.rep.name : 'مخزن ' + r.warehouse.name }}</dd>
+      </div>
+    </dl>
+
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-sm">
+        <thead class="table-head">
+          <tr>
+            <th class="px-4 py-2 text-start">الصنف</th>
+            <th class="px-4 py-2 text-start">الكمية</th>
+            <th class="px-4 py-2 text-start">السعر</th>
+            <th class="px-4 py-2 text-start">الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (i of r.items; track i.product) {
+            <tr>
+              <td class="px-4 py-2 font-medium">{{ i.name }}</td>
+              <td class="px-4 py-2">{{ i.quantity }}</td>
+              <td class="px-4 py-2">{{ i.unitPrice | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="px-4 py-2">{{ i.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <p class="border-t border-stormy-teal-900 px-4 py-3 text-lg">
+        إجمالي المرتجع: <span class="font-bold" [class.line-through]="r.status === Status.CANCELLED">{{ r.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+      </p>
+    </div>
+
+    @if (r.notes) {
+      <p class="card text-sm"><span class="font-semibold">ملاحظات:</span> {{ r.notes }}</p>
+    }
+  }
+</section>

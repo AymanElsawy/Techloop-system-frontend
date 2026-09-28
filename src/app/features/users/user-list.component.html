@@ -1,0 +1,118 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">المستخدمون</h1>
+    <a routerLink="/users/new" class="btn-primary">مستخدم جديد</a>
+  </div>
+
+  @if (feedback(); as f) {
+    <p role="status" class="rounded-lg px-3 py-2 text-sm"
+      [class]="f.ok ? 'bg-yale-blue-900 text-yale-blue-500' : 'bg-vibrant-coral-900 text-vibrant-coral-300'">
+      {{ f.message }}
+    </p>
+  }
+
+  @if (users.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل المستخدمين..." />
+  } @else if (users.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل المستخدمين." (retry)="users.reload()" />
+  } @else if (!users.value()?.length) {
+    <app-status-message type="empty" message="لا يوجد مستخدمون." />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">الاسم</th>
+            <th scope="col" class="px-4 py-3 font-semibold">البريد الإلكتروني</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الدور</th>
+            <th scope="col" class="px-4 py-3 font-semibold">المنطقة</th>
+            <th scope="col" class="px-4 py-3 font-semibold">المخزن</th>
+            <th scope="col" class="px-4 py-3 font-semibold">آخر دخول</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الحالة</th>
+            <th scope="col" class="px-4 py-3"><span class="sr-only">إجراءات</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (user of users.value(); track user.id) {
+            <tr>
+              <td class="px-4 py-3 font-medium">{{ user.name }}</td>
+              <td class="px-4 py-3 text-right" dir="ltr">{{ user.email }}</td>
+              <td class="px-4 py-3">{{ roleLabels[user.role] }}</td>
+              <td class="px-4 py-3">
+                @if (user.role !== UserRole.SALES_REP) {
+                  <span class="text-stormy-teal">كل المحافظات</span>
+                } @else if (user.governorates.length) {
+                  <span class="text-xs">{{ user.governorates.join('، ') }}</span>
+                } @else {
+                  <span class="rounded-full bg-soft-apricot-800 px-2 py-0.5 text-xs font-medium text-soft-apricot-200">غير محددة</span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                @if (user.role === UserRole.SALES_REP) {
+                  <label class="sr-only" [for]="'wh-' + user.id">مخزن {{ user.name }}</label>
+                  <select [id]="'wh-' + user.id" class="form-input h-9! min-w-36 text-xs" [value]="user.warehouse ?? ''" (change)="changeWarehouse(user, $event)">
+                    <option value="">بدون مخزن</option>
+                    @for (w of warehouses.value() ?? []; track w.id) {
+                      <option [value]="w.id" [selected]="w.id === user.warehouse">{{ w.name }}</option>
+                    }
+                  </select>
+                } @else {
+                  <span class="text-stormy-teal">—</span>
+                }
+              </td>
+              <td class="px-4 py-3">{{ user.lastLoginAt ? (user.lastLoginAt | date: 'short') : '—' }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full px-2.5 py-1 text-xs font-medium"
+                  [class]="user.isActive ? 'bg-yale-blue-900 text-yale-blue-600' : 'bg-vibrant-coral-900 text-vibrant-coral-300'">
+                  {{ user.isActive ? 'نشط' : 'موقوف' }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                @if (user.role === UserRole.SALES_REP && regionUserId() !== user.id) {
+                  <button type="button" class="me-3 whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="openRegion(user)">
+                    المحافظات
+                  </button>
+                }
+                @if (canSetPassword(user) && passwordUserId() !== user.id) {
+                  <button type="button" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="openPasswordForm(user)">
+                    تعيين كلمة مرور
+                  </button>
+                }
+              </td>
+            </tr>
+            @if (regionUserId() === user.id) {
+              <tr class="bg-alabaster-grey-800">
+                <td colspan="8" class="space-y-3 px-4 py-3">
+                  <app-governorate-picker [(selected)]="regionDraft" [label]="'محافظات ' + user.name" />
+                  <div class="flex gap-3">
+                    <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveRegion(user)">
+                      {{ saving() ? 'جاري الحفظ...' : 'حفظ المحافظات' }}
+                    </button>
+                    <button type="button" class="btn-outline" (click)="regionUserId.set(null)">إلغاء</button>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (passwordUserId() === user.id) {
+              <tr class="bg-alabaster-grey-800">
+                <td colspan="8" class="px-4 py-3">
+                  <form (submit)="savePassword($event, user)" class="flex flex-wrap items-start gap-3">
+                    <div class="min-w-56 flex-1">
+                      <label [for]="'pw-' + user.id" class="sr-only">كلمة المرور الجديدة لـ {{ user.name }}</label>
+                      <input [id]="'pw-' + user.id" type="password" [formControl]="password" class="form-input" dir="ltr"
+                        autocomplete="new-password" placeholder="كلمة المرور الجديدة (8 أحرف على الأقل)" />
+                    </div>
+                    <button type="submit" class="btn-primary" [disabled]="password.invalid || saving()">
+                      {{ saving() ? 'جاري الحفظ...' : 'حفظ' }}
+                    </button>
+                    <button type="button" class="btn-outline" (click)="passwordUserId.set(null)">إلغاء</button>
+                  </form>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -1,0 +1,135 @@
+<section class="mx-auto max-w-4xl space-y-6">
+  @if (id()) {
+    <a [routerLink]="['/inventory/warehouses', id()]" class="text-sm text-stormy-teal hover:underline">→ العودة إلى المخزن</a>
+  } @else {
+    <a routerLink="/inventory" class="text-sm text-stormy-teal hover:underline">→ العودة إلى المخزن</a>
+  }
+  <div>
+    <h1 class="text-2xl font-bold">{{ isReceive() ? 'وارد من مورد' : typeLabels[kind()] }}</h1>
+    <p class="mt-1 text-stormy-teal">
+      @switch (kind()) {
+        @case (MovementType.RECEIVE) { بضاعة مشتراة تدخل المخزن. سعر الشراء بيحدّث متوسط سعر الصنف وآخر سعر شراء. }
+        @case (MovementType.ISSUE) { بضاعة تخرج من المخزن إلى عهدة المندوب. }
+        @case (MovementType.RETURN) { بضاعة ترجع من عهدة المندوب إلى المخزن. }
+      }
+    </p>
+  </div>
+
+  @if (warehouses.error() || products.error() || details.error()) {
+    <div role="alert" class="card space-y-3 text-center">
+      <p class="text-sm">حدث خطأ أثناء تحميل البيانات.</p>
+      <button type="button" class="btn-outline" (click)="warehouses.reload(); products.reload(); details.reload()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-6">
+      <div class="card grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="warehouse" class="form-label">المخزن *</label>
+          <select id="warehouse" formControlName="warehouseId" class="form-input" (change)="resetLines()">
+            <option value="" disabled>اختر المخزن</option>
+            @for (w of warehouses.value() ?? []; track w.id) {
+              <option [value]="w.id">{{ w.name }}</option>
+            }
+          </select>
+        </div>
+
+        @if (isReceive()) {
+          <app-supplier-picker [control]="form.controls.supplierId" [required]="true" />
+        } @else if (details.value(); as d) {
+          <div>
+            <label for="rep" class="form-label">المندوب *</label>
+            <select id="rep" formControlName="repId" class="form-input" (change)="resetLines()">
+              <option value="" disabled>اختر المندوب</option>
+              @for (r of d.reps; track r.rep.id) {
+                <option [value]="r.rep.id">{{ r.rep.name }}</option>
+              }
+            </select>
+            @if (!d.reps.length) {
+              <p class="mt-1 text-xs text-soft-apricot-300">لا يوجد مناديب تابعين لهذا المخزن. اربط المندوب بالمخزن من صفحة المستخدمين.</p>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="card space-y-4">
+        <h2 class="font-semibold">الأصناف</h2>
+        @if (!isReceive() && value().warehouseId && !options().length && (kind() === MovementType.ISSUE || value().repId)) {
+          <p class="text-sm text-stormy-teal">{{ kind() === MovementType.ISSUE ? 'المخزن فارغ.' : 'لا توجد بضاعة في عهدة هذا المندوب.' }}</p>
+        }
+        @if (isReceive() && products.hasValue() && !options().length) {
+          <p class="text-sm text-stormy-teal">لا توجد أصناف نشطة. <a routerLink="/inventory/products/new" class="font-semibold text-vibrant-coral-400 hover:underline">أضف صنف</a></p>
+        }
+        <div formArrayName="items" class="space-y-3">
+          @for (row of items.controls; track row; let i = $index) {
+            <div [formGroupName]="i" class="grid gap-3 rounded-lg border border-stormy-teal-900 p-3 sm:grid-cols-12 sm:items-end">
+              <div [class]="isReceive() ? 'sm:col-span-5' : 'sm:col-span-7'">
+                <label [for]="'product-' + i" class="form-label">الصنف</label>
+                <select [id]="'product-' + i" formControlName="productId" class="form-input" (change)="onProductChange(i)">
+                  <option value="" disabled>اختر الصنف</option>
+                  @for (o of options(); track o.id) {
+                    @if (!isTaken(o.id, i)) {
+                      <option [value]="o.id">{{ o.name }}{{ o.unit ? ' (' + unitLabels[o.unit] + ')' : '' }}{{ o.available !== null ? ' — المتاح ' + o.available : '' }}</option>
+                    }
+                  }
+                </select>
+              </div>
+              <div [class]="isReceive() ? 'sm:col-span-2' : 'sm:col-span-3'">
+                <label [for]="'qty-' + i" class="form-label">الكمية</label>
+                <input [id]="'qty-' + i" type="number" min="1" step="1" inputmode="numeric" formControlName="quantity" class="form-input" dir="ltr"
+                  [attr.aria-invalid]="lineErrors()[i] !== null" />
+              </div>
+              @if (isReceive()) {
+                <div class="sm:col-span-2">
+                  <label [for]="'cost-' + i" class="form-label">سعر الشراء</label>
+                  <input [id]="'cost-' + i" type="number" min="0" step="0.01" inputmode="decimal" formControlName="unitCost" class="form-input" dir="ltr" />
+                </div>
+                <div class="text-sm sm:col-span-2">
+                  <p class="text-stormy-teal">الإجمالي</p>
+                  <p class="font-semibold tabular-nums">{{ lineTotals()[i] | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                </div>
+              }
+              <div class="sm:col-span-1">
+                @if (items.length > 1) {
+                  <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="removeItem(i)"
+                    [attr.aria-label]="'حذف السطر ' + (i + 1)">حذف</button>
+                }
+              </div>
+              @if (costPreviews()[i]; as c) {
+                <div class="grid grid-cols-2 gap-2 rounded-md bg-alabaster-grey-800 p-2 text-xs sm:col-span-12 sm:grid-cols-4">
+                  <p><span class="text-stormy-teal">الكمية:</span> <span class="tabular-nums">{{ c.oldQty }} ← {{ c.newQty }}</span></p>
+                  <p><span class="text-stormy-teal">السعر القديم (متوسط):</span> <span class="tabular-nums">{{ c.avgCost === null ? '—' : (c.avgCost | currency: 'EGP' : 'symbol' : '1.0-2') }}</span></p>
+                  <p><span class="text-stormy-teal">آخر شراء:</span> <span class="tabular-nums">{{ c.lastCost === null ? '—' : (c.lastCost | currency: 'EGP' : 'symbol' : '1.0-2') }}</span>{{ c.lastSupplier ? ' — ' + c.lastSupplier : '' }}</p>
+                  <p class="font-semibold"><span class="text-stormy-teal">المتوسط الجديد:</span> <span class="tabular-nums text-yale-blue">{{ c.newAvg === null ? '—' : (c.newAvg | currency: 'EGP' : 'symbol' : '1.0-2') }}</span></p>
+                </div>
+              }
+              @if (lineErrors()[i] !== null) {
+                <p class="form-error sm:col-span-12" role="alert">المتاح {{ lineErrors()[i] }} فقط.</p>
+              }
+            </div>
+          }
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <button type="button" class="btn-outline" (click)="addItem()">+ إضافة صنف</button>
+          @if (isReceive()) {
+            <p class="text-sm text-stormy-teal">إجمالي الفاتورة: <span class="text-lg font-bold tabular-nums text-yale-blue">{{ grandTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span></p>
+          }
+        </div>
+        @if (missingCost()) {
+          <p class="text-xs text-soft-apricot-300">اكتب سعر الشراء لكل صنف.</p>
+        }
+      </div>
+
+      <div class="card">
+        <label for="notes" class="form-label">ملاحظات</label>
+        <input id="notes" formControlName="notes" class="form-input" [placeholder]="isReceive() ? 'رقم فاتورة المورد' : 'رقم الإذن'" />
+      </div>
+
+      @if (error()) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ error() }}</p>
+      }
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || !canSubmit() || saving()">
+        {{ saving() ? 'جاري الحفظ...' : 'حفظ ' + (isReceive() ? 'الوارد' : typeLabels[kind()]) }}
+      </button>
+    </form>
+  }
+</section>

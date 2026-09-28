@@ -1,0 +1,122 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">العملاء</h1>
+    <div class="flex flex-wrap gap-3">
+      @if (isManager && pending.value()?.length) {
+        <button type="button" class="btn bg-soft-apricot-800 text-soft-apricot-200 hover:bg-soft-apricot-700" (click)="showPending()">
+          بانتظار الموافقة ({{ pending.value()?.length }})
+        </button>
+      }
+      <a routerLink="/customers/new" class="btn-primary">عميل جديد</a>
+    </div>
+  </div>
+
+  @if (noRegion) {
+    <p role="alert" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+      لم يتم تحديد منطقة (محافظات) لك بعد، لذلك لا يظهر أي عميل. تواصل مع الإدارة.
+    </p>
+  } @else if (!isManager) {
+    <p class="text-sm text-stormy-teal">منطقتك: {{ governorates.join('، ') }}</p>
+  }
+
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="search">بحث</label>
+    <input
+      id="search"
+      type="search"
+      class="form-input w-full sm:w-64"
+      placeholder="بحث بالاسم أو الهاتف"
+      [value]="search()"
+      (input)="search.set(selectValue($event))"
+    />
+
+    <label class="sr-only" for="governorate-filter">المحافظة</label>
+    <select id="governorate-filter" class="form-input w-auto" [value]="governorate()" (change)="setGovernorate($event)">
+      <option value="">كل المحافظات</option>
+      @for (g of governorates; track g) {
+        <option [value]="g">{{ g }}</option>
+      }
+    </select>
+
+    @if (isManager) {
+      <label class="sr-only" for="status-filter">الحالة</label>
+      <select id="status-filter" class="form-input w-auto" [value]="status()" (change)="setStatus($event)">
+        <option value="">كل الحالات</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ statusLabels[s] }}</option>
+        }
+      </select>
+    }
+
+    @if (hasFilters()) {
+      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+    }
+  </div>
+
+  @if (customers.isLoading() && !customers.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل العملاء..." />
+  } @else if (customers.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل العملاء." (retry)="customers.reload()" />
+  } @else if (!customers.value()?.length) {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد عملاء مطابقون للبحث.' : 'لا يوجد عملاء بعد.'" />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">الاسم</th>
+            <th scope="col" class="px-4 py-3 font-semibold">العنوان</th>
+            <th scope="col" class="px-4 py-3 font-semibold">مدين</th>
+            <th scope="col" class="px-4 py-3 font-semibold">دائن</th>
+            <th scope="col" class="px-4 py-3 font-semibold">آخر فاتورة</th>
+            <th scope="col" class="px-4 py-3 font-semibold">آخر تحصيل</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الحالة</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (c of customers.value(); track c.id) {
+            <tr class="cursor-pointer transition hover:bg-alabaster-grey-800" (click)="open(c.id)">
+              <td class="px-4 py-3">
+                <a [routerLink]="['/customers', c.id]" class="font-semibold text-yale-blue hover:text-vibrant-coral-400 hover:underline">
+                  {{ c.name }}
+                </a>
+                @if (c.phone) {
+                  <p class="text-xs text-stormy-teal text-right" dir="ltr">{{ c.phone }}</p>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <p>{{ c.governorate }}{{ c.city ? ' - ' + c.city : '' }}</p>
+                @if (c.address) {
+                  <p class="text-xs text-stormy-teal">{{ c.address }}</p>
+                }
+              </td>
+              <td class="whitespace-nowrap px-4 py-3">{{ c.debit | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="whitespace-nowrap px-4 py-3">{{ c.credit | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="whitespace-nowrap px-4 py-3">
+                @if (c.lastInvoice; as inv) {
+                  {{ inv.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  <span class="block text-xs text-stormy-teal">{{ inv.date | date: 'd MMM y' }}</span>
+                } @else {
+                  —
+                }
+              </td>
+              <td class="whitespace-nowrap px-4 py-3">
+                @if (c.lastCollection; as col) {
+                  {{ col.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  <span class="block text-xs text-stormy-teal">{{ col.date | date: 'd MMM y' }}</span>
+                } @else {
+                  —
+                }
+              </td>
+              <td class="px-4 py-3">
+                <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium" [class]="statusClasses[c.status]">
+                  {{ statusLabels[c.status] }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

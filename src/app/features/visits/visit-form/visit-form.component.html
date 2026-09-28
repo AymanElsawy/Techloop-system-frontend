@@ -1,0 +1,69 @@
+<section class="mx-auto max-w-xl space-y-6">
+  <a routerLink="/visits" class="text-sm text-stormy-teal hover:underline">→ العودة إلى الزيارات</a>
+  <h1 class="text-2xl font-bold">زيارة جديدة</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card space-y-5">
+    @if (canPickRep) {
+      <div>
+        <label for="rep" class="form-label">المندوب</label>
+        <select id="rep" formControlName="salesRepId" class="form-input" [attr.aria-invalid]="form.controls.salesRepId.invalid && form.controls.salesRepId.touched">
+          <option value="" disabled>
+            {{ salesReps.isLoading() ? 'جاري تحميل المناديب...' : salesReps.error() ? 'تعذر تحميل المناديب' : 'اختر المندوب' }}
+          </option>
+          @for (rep of salesReps.value() ?? []; track rep.id) {
+            <option [value]="rep.id">{{ rep.name }}{{ rep.governorates.length ? '' : ' (بدون منطقة)' }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div>
+      <label for="customer" class="form-label">العميل</label>
+      <select id="customer" formControlName="customerId" class="form-input" [attr.aria-invalid]="form.controls.customerId.invalid && form.controls.customerId.touched">
+        <option value="" disabled>
+          {{ customers.isLoading() ? 'جاري تحميل العملاء...' : customers.error() ? 'تعذر تحميل العملاء' : 'اختر العميل' }}
+        </option>
+        @for (customer of availableCustomers(); track customer.id) {
+          <option [value]="customer.id">{{ customer.name }} · {{ customer.governorate }}</option>
+        }
+      </select>
+      @if (canPickRep) {
+        <p class="mt-1 text-xs text-stormy-teal">تظهر عملاء محافظات المندوب المختار فقط.</p>
+      }
+      @if (customers.error()) {
+        <button type="button" class="mt-1 text-xs text-vibrant-coral-400 underline" (click)="customers.reload()">إعادة المحاولة</button>
+      }
+    </div>
+
+    <fieldset>
+      <legend class="form-label">غرض الزيارة</legend>
+      <div class="flex gap-3">
+        @for (p of purposes; track p) {
+          <label class="flex flex-1 cursor-pointer items-center gap-2 rounded-lg border border-stormy-teal-800 bg-surface px-3 py-2.5 text-sm has-checked:border-stormy-teal has-checked:bg-stormy-teal-900">
+            <input type="radio" formControlName="purpose" [value]="p" class="accent-stormy-teal" />
+            {{ purposeLabels[p] }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="date" class="form-label">التاريخ</label>
+        <input id="date" type="date" formControlName="date" class="form-input" />
+      </div>
+      <div>
+        <label for="time" class="form-label">الوقت</label>
+        <input id="time" type="time" formControlName="time" class="form-input" />
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
+      {{ saving() ? 'جاري الحفظ...' : 'إنشاء الزيارة' }}
+    </button>
+
+    @if (error(); as message) {
+      <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+    }
+  </form>
+</section>

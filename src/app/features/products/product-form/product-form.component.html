@@ -1,0 +1,86 @@
+<section class="mx-auto max-w-2xl space-y-6">
+  <a routerLink="/inventory/products" class="text-sm text-stormy-teal hover:underline">→ العودة إلى الأصناف</a>
+  <h1 class="text-2xl font-bold">{{ id() ? 'تعديل صنف' : 'صنف جديد' }}</h1>
+
+  @if (loading()) {
+    <p class="text-sm text-stormy-teal" role="status">جاري تحميل بيانات الصنف...</p>
+  } @else if (loadError()) {
+    <div role="alert" class="card space-y-3 text-center">
+      <p class="text-sm">حدث خطأ أثناء تحميل بيانات الصنف.</p>
+      <button type="button" class="btn-outline" (click)="load()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card space-y-5">
+      <div>
+        <label for="name" class="form-label">اسم الصنف *</label>
+        <input id="name" formControlName="name" class="form-input" autocomplete="off"
+          [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" aria-describedby="name-error" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <p id="name-error" class="form-error">اسم الصنف مطلوب (حرفان على الأقل).</p>
+        }
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-3">
+        <div>
+          <label for="price" class="form-label">السعر (ج.م) *</label>
+          <input id="price" type="number" min="0" step="0.01" inputmode="decimal" formControlName="price" class="form-input" dir="ltr"
+            [attr.aria-invalid]="form.controls.price.invalid && form.controls.price.touched" aria-describedby="price-error" />
+          @if (form.controls.price.touched && form.controls.price.invalid) {
+            <p id="price-error" class="form-error">السعر مطلوب ولا يقل عن 0.</p>
+          }
+        </div>
+        <div>
+          <label for="unit" class="form-label">الوحدة</label>
+          <select id="unit" formControlName="unit" class="form-input">
+            <option value="">بدون</option>
+            @for (u of units; track u) {
+              <option [value]="u">{{ unitLabels[u] }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <app-supplier-picker [control]="form.controls.supplierId" />
+
+      <fieldset class="grid gap-5 border-t border-stormy-teal-900 pt-5 sm:grid-cols-2">
+        <legend class="sr-only">بيانات إضافية</legend>
+        <div>
+          <label for="code" class="form-label">كود الصنف</label>
+          <input id="code" formControlName="code" class="form-input" dir="ltr" autocomplete="off" />
+        </div>
+        <div>
+          <label for="manufacturer" class="form-label">الشركة المنتجة</label>
+          <input id="manufacturer" formControlName="manufacturer" class="form-input" autocomplete="off" />
+        </div>
+        <div>
+          <label for="min-quantity" class="form-label">حد التنبيه للكمية</label>
+          <input id="min-quantity" type="number" min="0" step="1" inputmode="numeric" formControlName="minQuantity" class="form-input" dir="ltr"
+            aria-describedby="min-quantity-hint" [attr.aria-invalid]="form.controls.minQuantity.invalid && form.controls.minQuantity.touched" />
+          <p id="min-quantity-hint" class="mt-1 text-xs text-stormy-teal">يظهر تنبيه "كمية منخفضة" لما إجمالي الكمية (كل المخازن والعُهد) يوصل للرقم ده. الكمية نفسها بتتسجل من المخزن (وارد).</p>
+        </div>
+        <div>
+          <label for="expiry" class="form-label">تاريخ الصلاحية</label>
+          <input id="expiry" type="date" formControlName="expiryDate" class="form-input" />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="notes" class="form-label">ملاحظات</label>
+          <textarea id="notes" formControlName="notes" rows="3" class="form-input"></textarea>
+        </div>
+        @if (id()) {
+          <label class="flex cursor-pointer items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" formControlName="isActive" class="size-4 accent-stormy-teal" />
+            صنف نشط (الصنف الموقوف لا يظهر للمناديب)
+          </label>
+        }
+      </fieldset>
+
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
+        {{ saving() ? 'جاري الحفظ...' : id() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
+      </button>
+
+      @if (error(); as message) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+      }
+    </form>
+  }
+</section>

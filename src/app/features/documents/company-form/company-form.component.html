@@ -1,0 +1,50 @@
+<section class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <a routerLink="/documents" class="text-sm text-stormy-teal hover:underline">→ الفواتير</a>
+    <h1 class="mt-1 text-2xl font-bold">بيانات الشركة على الفواتير</h1>
+    <p class="mt-1 text-sm text-stormy-teal">بتتطبع في رأس وذيل كل فاتورة وإيصال.</p>
+  </div>
+
+  @if (company.isLoading() && !company.hasValue()) {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  } @else if (company.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="company.reload()" />
+  } @else {
+    <form class="card space-y-4" [formGroup]="form" (ngSubmit)="save()">
+      <div>
+        <label class="form-label" for="c-name">اسم الشركة *</label>
+        <input id="c-name" class="form-input" formControlName="name" [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" />
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <p class="form-error">اكتب اسم الشركة.</p>
+        }
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="form-label" for="c-phone">التليفون</label>
+          <input id="c-phone" class="form-input" formControlName="phone" dir="ltr" />
+        </div>
+        <div>
+          <label class="form-label" for="c-address">العنوان</label>
+          <input id="c-address" class="form-input" formControlName="address" />
+        </div>
+        <div>
+          <label class="form-label" for="c-tax">الرقم الضريبي</label>
+          <input id="c-tax" class="form-input" formControlName="taxNumber" dir="ltr" />
+        </div>
+        <div>
+          <label class="form-label" for="c-cr">السجل التجاري</label>
+          <input id="c-cr" class="form-input" formControlName="commercialRegister" dir="ltr" />
+        </div>
+      </div>
+      <div>
+        <label class="form-label" for="c-footer">ملاحظة أسفل الفاتورة</label>
+        <textarea id="c-footer" class="form-input" rows="2" formControlName="footer" placeholder="مثال: البضاعة المباعة لا ترد ولا تستبدل"></textarea>
+      </div>
+
+      @if (message(); as m) {
+        <p role="status" class="rounded-lg px-3 py-2 text-sm" [class]="m.ok ? 'bg-stormy-teal-900 text-stormy-teal' : 'bg-vibrant-coral-900 text-vibrant-coral-300'">{{ m.text }}</p>
+      }
+      <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'جاري الحفظ...' : 'حفظ' }}</button>
+    </form>
+  }
+</section>

@@ -1,0 +1,132 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">المخزن</h1>
+    @if (isManager) {
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/inventory/receive" class="btn-primary">وارد من مورد</a>
+        @if (!showForm()) {
+          <button type="button" class="btn-outline" (click)="showForm.set(true)">مخزن جديد</button>
+        }
+      </div>
+    }
+  </div>
+  <app-inventory-tabs />
+
+  @if (isManager) {
+    @if (showForm()) {
+      <form [formGroup]="form" (ngSubmit)="create()" novalidate class="card space-y-4">
+        <h2 class="font-semibold">مخزن جديد</h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="wh-name" class="form-label">اسم المخزن *</label>
+            <input id="wh-name" formControlName="name" class="form-input" placeholder="مثلاً: القاهرة - الجيزة"
+              [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" />
+          </div>
+          <div>
+            <label for="wh-notes" class="form-label">ملاحظات</label>
+            <input id="wh-notes" formControlName="notes" class="form-input" placeholder="العنوان أو أمين المخزن" />
+          </div>
+        </div>
+        @if (error()) {
+          <p role="alert" class="form-error">{{ error() }}</p>
+        }
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+            {{ saving() ? 'جاري الحفظ...' : 'إضافة المخزن' }}
+          </button>
+          <button type="button" class="btn-outline" (click)="showForm.set(false)">إلغاء</button>
+        </div>
+      </form>
+    }
+
+    @if (warehouses.isLoading() && !warehouses.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل المخازن..." />
+    } @else if (warehouses.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل المخازن." (retry)="warehouses.reload()" />
+    } @else if (!warehouses.value()?.length) {
+      <app-status-message type="empty" message="لا توجد مخازن بعد. أضف أول مخزن لتسجيل البضاعة الواردة." />
+    } @else {
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        @for (w of warehouses.value(); track w.id) {
+          <a [routerLink]="['/inventory/warehouses', w.id]"
+            class="card group block transition hover:border-stormy-teal-700 focus-visible:outline-2 focus-visible:outline-vibrant-coral-400">
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="text-lg font-bold group-hover:text-vibrant-coral-400">{{ w.name }}</h2>
+              @if (!w.isActive) {
+                <span class="rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
+              }
+            </div>
+            @if (w.notes) {
+              <p class="mt-1 text-sm text-stormy-teal">{{ w.notes }}</p>
+            }
+            <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-stormy-teal-900 pt-4">
+              <div>
+                <dt class="text-xs text-stormy-teal">الكمية في المخزن</dt>
+                <dd class="text-xl font-bold tabular-nums">{{ w.totalQuantity }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-stormy-teal">المناديب</dt>
+                <dd class="text-xl font-bold tabular-nums">{{ w.repsCount }}</dd>
+              </div>
+            </dl>
+          </a>
+        }
+      </div>
+    }
+  } @else {
+    @if (myStock.isLoading() && !myStock.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل عهدتك..." />
+    } @else if (myStock.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل عهدتك." (retry)="myStock.reload()" />
+    } @else if (myStock.value(); as s) {
+      @if (!s.warehouse) {
+        <p role="alert" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+          لم يتم ربطك بمخزن بعد، لذلك لا يمكنك البيع. تواصل مع الإدارة.
+        </p>
+      } @else {
+        <p class="text-sm text-stormy-teal">تبيع من مخزن <span class="font-semibold text-yale-blue">{{ s.warehouse.name }}</span>. الفاتورة تخصم من عهدتك أولاً، والباقي من المخزن.</p>
+      }
+
+      <div class="grid gap-6 lg:grid-cols-2">
+        @for (block of [
+          { title: 'عهدتي', rows: s.custody, empty: 'لا توجد بضاعة في عهدتك.', show: true },
+          { title: 'مخزن ' + (s.warehouse?.name ?? ''), rows: s.warehouseStock, empty: 'المخزن فارغ.', show: !!s.warehouse },
+        ]; track block.title) {
+          @if (block.show) {
+          <div class="card p-0">
+            <div class="flex items-center justify-between border-b border-stormy-teal-900 px-4 py-3">
+              <h2 class="font-semibold">{{ block.title }}</h2>
+              <span class="text-sm text-stormy-teal">الإجمالي: <span class="font-bold tabular-nums text-yale-blue">{{ totalQuantity(block.rows) }}</span></span>
+            </div>
+            @if (block.rows.length) {
+              <table class="w-full text-right text-sm">
+                <thead class="table-head">
+                  <tr>
+                    <th scope="col" class="px-4 py-2.5 font-semibold">الصنف</th>
+                    <th scope="col" class="px-4 py-2.5 font-semibold">الكمية</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stormy-teal-900">
+                  @for (row of block.rows; track row.id) {
+                    <tr>
+                      <td class="px-4 py-2.5">
+                        {{ row.product.name }}
+                        @if (row.product.unit) {
+                          <span class="text-xs text-stormy-teal">({{ unitLabels[row.product.unit] }})</span>
+                        }
+                      </td>
+                      <td class="px-4 py-2.5 font-semibold">{{ row.quantity }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="px-4 py-6 text-center text-sm text-stormy-teal">{{ block.empty }}</p>
+            }
+          </div>
+          }
+        }
+      </div>
+    }
+  }
+</section>

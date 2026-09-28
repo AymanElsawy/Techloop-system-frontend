@@ -1,0 +1,99 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">الموردين</h1>
+    <div class="flex flex-wrap gap-3">
+      <a routerLink="/inventory/receive" class="btn-outline">وارد جديد</a>
+      @if (!showForm()) {
+        <button type="button" class="btn-primary" (click)="showForm.set(true)">مورد جديد</button>
+      }
+    </div>
+  </div>
+
+  @if (showForm()) {
+    <form [formGroup]="form" (ngSubmit)="create()" novalidate class="card space-y-4">
+      <h2 class="font-semibold">مورد جديد</h2>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div>
+          <label for="s-name" class="form-label">اسم المورد *</label>
+          <input id="s-name" formControlName="name" class="form-input" [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" />
+        </div>
+        <div>
+          <label for="s-phone" class="form-label">الهاتف</label>
+          <input id="s-phone" formControlName="phone" class="form-input" dir="ltr" inputmode="tel" />
+        </div>
+        <div>
+          <label for="s-company" class="form-label">الشركة</label>
+          <input id="s-company" formControlName="company" class="form-input" />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="s-address" class="form-label">العنوان</label>
+          <input id="s-address" formControlName="address" class="form-input" />
+        </div>
+        <div>
+          <label for="s-notes" class="form-label">ملاحظات</label>
+          <input id="s-notes" formControlName="notes" class="form-input" />
+        </div>
+      </div>
+      @if (error()) {
+        <p role="alert" class="form-error">{{ error() }}</p>
+      }
+      <div class="flex gap-3">
+        <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">{{ saving() ? 'جاري الحفظ...' : 'إضافة المورد' }}</button>
+        <button type="button" class="btn-outline" (click)="showForm.set(false)">إلغاء</button>
+      </div>
+    </form>
+  }
+
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="search">بحث</label>
+    <input id="search" type="search" class="form-input w-full sm:w-64" placeholder="بحث بالاسم أو الهاتف أو الشركة"
+      [value]="search()" (input)="search.set(inputValue($event))" />
+    <label class="sr-only" for="active-filter">الحالة</label>
+    <select id="active-filter" class="form-input w-auto" [value]="active()" (change)="active.set($any(inputValue($event)))">
+      <option value="true">الموردين النشطين</option>
+      <option value="false">الموقوفين</option>
+      <option value="">الكل</option>
+    </select>
+  </div>
+
+  @if (suppliers.isLoading() && !suppliers.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الموردين..." />
+  } @else if (suppliers.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الموردين." (retry)="suppliers.reload()" />
+  } @else if (!suppliers.value()?.length) {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد موردين مطابقين.' : 'لا يوجد موردين بعد. أضف أول مورد، أو من فورم الوارد مباشرة.'" />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">المورد</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الهاتف</th>
+            <th scope="col" class="px-4 py-3 font-semibold">مرات التوريد</th>
+            <th scope="col" class="px-4 py-3 font-semibold">إجمالي المشتريات</th>
+            <th scope="col" class="px-4 py-3 font-semibold">آخر توريد</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (s of suppliers.value(); track s.id) {
+            <tr [class.opacity-60]="!s.isActive">
+              <td class="px-4 py-3">
+                <a [routerLink]="['/suppliers', s.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">{{ s.name }}</a>
+                @if (!s.isActive) {
+                  <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
+                }
+                @if (s.company) {
+                  <p class="text-xs text-stormy-teal">{{ s.company }}</p>
+                }
+              </td>
+              <td class="px-4 py-3 text-right" dir="ltr">{{ s.phone ?? '—' }}</td>
+              <td class="px-4 py-3">{{ s.receipts }}</td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ s.totalPurchases | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="whitespace-nowrap px-4 py-3">{{ s.lastPurchaseAt ? (s.lastPurchaseAt | date: 'd MMM y') : '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

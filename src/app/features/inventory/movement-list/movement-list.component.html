@@ -1,0 +1,102 @@
+<section class="space-y-6">
+  <h1 class="text-2xl font-bold">المخزن</h1>
+  <app-inventory-tabs />
+
+  <div class="flex flex-wrap items-center gap-3">
+    @if (isManager) {
+      <label class="sr-only" for="warehouse-filter">المخزن</label>
+      <select id="warehouse-filter" class="form-input w-auto" [value]="warehouse()" (change)="warehouse.set(selectValue($event))">
+        <option value="">كل المخازن</option>
+        @for (w of warehouses.value() ?? []; track w.id) {
+          <option [value]="w.id">{{ w.name }}</option>
+        }
+      </select>
+    }
+    <label class="sr-only" for="type-filter">نوع الحركة</label>
+    <select id="type-filter" class="form-input w-auto" [value]="type()" (change)="setType($event)">
+      <option value="">كل الحركات</option>
+      @for (t of types; track t) {
+        <option [value]="t">{{ typeLabels[t] }}</option>
+      }
+    </select>
+    @if (isManager && rep()) {
+      <span class="rounded-full bg-stormy-teal-900 px-3 py-1.5 text-sm">المندوب: {{ repName() || '…' }}</span>
+    }
+    @if (hasFilters()) {
+      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+    }
+  </div>
+
+  @if (movements.isLoading() && !movements.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الحركات..." />
+  } @else if (movements.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الحركات." (retry)="movements.reload()" />
+  } @else if (!movements.value()?.length) {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد حركات مطابقة.' : 'لا توجد حركات بعد.'" />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الحركة</th>
+            <th scope="col" class="px-4 py-3 font-semibold">المخزن / المندوب</th>
+            <th scope="col" class="px-4 py-3 font-semibold">الأصناف</th>
+            <th scope="col" class="px-4 py-3 font-semibold">سجّلها</th>
+            <th scope="col" class="px-4 py-3"><span class="sr-only">مستند</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (m of movements.value(); track m.id) {
+            <tr class="align-top">
+              <td class="whitespace-nowrap px-4 py-3">{{ m.createdAt | date: 'd MMM y, h:mm a' }}</td>
+              <td class="px-4 py-3">
+                <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium" [class]="typeClasses[m.type]">{{ typeLabels[m.type] }}</span>
+                @if (m.invoice) {
+                  <a [routerLink]="['/invoices', m.invoice.id]" class="mt-1 block text-xs text-vibrant-coral-400 hover:underline" dir="ltr">{{ m.invoice.invoiceNumber }}</a>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <p>{{ m.warehouse?.name ?? '—' }}</p>
+                @if (m.supplier) {
+                  <a [routerLink]="['/suppliers', m.supplier.id]" class="text-xs text-vibrant-coral-400 hover:underline">المورد: {{ m.supplier.name }}</a>
+                }
+                @if (m.rep) {
+                  <p class="text-xs text-stormy-teal">{{ m.rep.name }}</p>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <ul class="space-y-0.5">
+                  @for (i of m.items; track i.product) {
+                    <li>
+                      {{ i.name }}: <span class="font-semibold tabular-nums">{{ i.quantity }}</span>
+                      @if (isManager && i.unitCost !== null && i.unitCost !== undefined) {
+                        <span class="text-xs text-stormy-teal">× {{ i.unitCost }} ج.م.</span>
+                      }
+                      @if (i.fromCustody && i.fromCustody < i.quantity) {
+                        <span class="text-xs text-stormy-teal">({{ i.fromCustody }} عهدة + {{ i.quantity - i.fromCustody }} مخزن)</span>
+                      } @else if (i.fromCustody) {
+                        <span class="text-xs text-stormy-teal">(من العهدة)</span>
+                      }
+                    </li>
+                  }
+                </ul>
+                @if (m.notes) {
+                  <p class="mt-1 text-xs text-stormy-teal">{{ m.notes }}</p>
+                }
+              </td>
+              <td class="px-4 py-3">{{ m.createdBy?.name ?? '—' }}</td>
+              <td class="px-4 py-3">
+                @if (printType[m.type]; as t) {
+                  <a [routerLink]="['/documents', t, m.id]" class="text-stormy-teal hover:underline">طباعة</a>
+                } @else if (m.invoice) {
+                  <a [routerLink]="['/documents/SALE', m.invoice.id]" class="text-stormy-teal hover:underline">طباعة الفاتورة</a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -1,0 +1,274 @@
+@import 'tailwindcss';
+
+/* Dark mode follows a `.dark` class on <html> (set in index.html / the header toggle). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+
+  --color-graphite: #353535;
+  --color-graphite-100: #0b0b0b;
+  --color-graphite-200: #151515;
+  --color-graphite-300: #202020;
+  --color-graphite-400: #2b2b2b;
+  --color-graphite-500: #353535;
+  --color-graphite-600: #5e5e5e;
+  --color-graphite-700: #868686;
+  --color-graphite-800: #aeaeae;
+  --color-graphite-900: #d7d7d7;
+
+  --color-stormy-teal: #3c6e71;
+  --color-stormy-teal-100: #0c1617;
+  --color-stormy-teal-200: #182c2d;
+  --color-stormy-teal-300: #244344;
+  --color-stormy-teal-400: #30595b;
+  --color-stormy-teal-500: #3c6e71;
+  --color-stormy-teal-600: #539a9e;
+  --color-stormy-teal-700: #7bb6b9;
+  --color-stormy-teal-800: #a7ced1;
+  --color-stormy-teal-900: #d3e7e8;
+
+  --color-alabaster-grey: #d9d9d9;
+  --color-alabaster-grey-100: #2b2b2b;
+  --color-alabaster-grey-200: #575757;
+  --color-alabaster-grey-300: #828282;
+  --color-alabaster-grey-400: #adadad;
+  --color-alabaster-grey-500: #d9d9d9;
+  --color-alabaster-grey-600: #e0e0e0;
+  --color-alabaster-grey-700: #e8e8e8;
+  --color-alabaster-grey-800: #f0f0f0;
+  --color-alabaster-grey-900: #f7f7f7;
+
+  --color-yale-blue: #284b63;
+  --color-yale-blue-100: #080f14;
+  --color-yale-blue-200: #101e27;
+  --color-yale-blue-300: #182d3b;
+  --color-yale-blue-400: #203c4e;
+  --color-yale-blue-500: #284b63;
+  --color-yale-blue-600: #3e7397;
+  --color-yale-blue-700: #6099be;
+  --color-yale-blue-800: #95bbd4;
+  --color-yale-blue-900: #cadde9;
+
+  /* Status colors: warning (apricot) and danger (coral). */
+  --color-soft-apricot: #fed9b7;
+  --color-soft-apricot-100: #562a01;
+  --color-soft-apricot-200: #ad5503;
+  --color-soft-apricot-300: #fb800c;
+  --color-soft-apricot-400: #fdad62;
+  --color-soft-apricot-500: #fed9b7;
+  --color-soft-apricot-600: #fee2c7;
+  --color-soft-apricot-700: #fee9d5;
+  --color-soft-apricot-800: #fff0e3;
+  --color-soft-apricot-900: #fff8f1;
+
+  --color-vibrant-coral: #f07167;
+  --color-vibrant-coral-100: #3e0a06;
+  --color-vibrant-coral-200: #7c140c;
+  --color-vibrant-coral-300: #bb1e12;
+  --color-vibrant-coral-400: #ea3528;
+  --color-vibrant-coral-500: #f07167;
+  --color-vibrant-coral-600: #f38c84;
+  --color-vibrant-coral-700: #f6a9a3;
+  --color-vibrant-coral-800: #f9c5c2;
+  --color-vibrant-coral-900: #fce2e0;
+
+  --color-surface: #ffffff;
+
+  /* Dark mode palettes (greys reuse alabaster-grey values below) */
+  --color-prussian-blue: #14213d;
+  --color-prussian-blue-100: #04070c;
+  --color-prussian-blue-200: #080d19;
+  --color-prussian-blue-300: #0c1425;
+  --color-prussian-blue-400: #101b31;
+  --color-prussian-blue-500: #14213d;
+  --color-prussian-blue-600: #29447e;
+  --color-prussian-blue-700: #3e67bf;
+  --color-prussian-blue-800: #7e99d5;
+  --color-prussian-blue-900: #beccea;
+
+  --color-orange: #fca311;
+  --color-orange-100: #362101;
+  --color-orange-200: #6b4201;
+  --color-orange-300: #a16402;
+  --color-orange-400: #d68502;
+  --color-orange-500: #fca311;
+  --color-orange-600: #fdb541;
+  --color-orange-700: #fec871;
+  --color-orange-800: #fedaa0;
+  --color-orange-900: #ffedd0;
+}
+
+@utility btn {
+  @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold whitespace-nowrap transition
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vibrant-coral-400
+    active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(40_75_99/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
+}
+@utility btn-accent {
+  @apply btn bg-vibrant-coral-400 text-white shadow-[0_1px_0_rgb(124_20_12/0.3)] hover:bg-vibrant-coral-400 dark:bg-orange-400 dark:text-black dark:hover:bg-orange;
+}
+@utility btn-outline {
+  @apply btn border border-stormy-teal-800 bg-surface text-yale-blue hover:border-stormy-teal-700 hover:bg-stormy-teal-900/60;
+}
+@utility card {
+  @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(40_75_99/0.05),0_4px_12px_-6px_rgb(40_75_99/0.08)];
+}
+@utility form-label {
+  @apply mb-1.5 block text-sm font-semibold text-yale-blue;
+}
+@utility form-input {
+  @apply w-full rounded-lg border border-stormy-teal-800 bg-surface px-3 py-2.5 text-sm text-yale-blue transition
+    placeholder:text-stormy-teal-700 hover:border-stormy-teal-700
+    focus:border-stormy-teal focus:outline-none focus:ring-3 focus:ring-stormy-teal-900
+    disabled:cursor-not-allowed disabled:bg-alabaster-grey-800 disabled:text-stormy-teal-600
+    aria-invalid:border-vibrant-coral-400 aria-invalid:ring-vibrant-coral-800;
+}
+@utility form-error {
+  @apply mt-1 text-xs text-vibrant-coral-400;
+}
+@utility table-head {
+  @apply border-b border-stormy-teal-900 bg-alabaster-grey-800 text-xs text-stormy-teal-400;
+}
+
+@layer base {
+  body {
+    @apply bg-alabaster-grey-800 text-graphite;
+  }
+  /* Single-line fields share the button height so filter rows line up. */
+  input.form-input:not([type='file']),
+  select.form-input {
+    @apply h-11 py-0;
+  }
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    @apply size-4 cursor-pointer accent-stormy-teal;
+  }
+  input[type='file'].form-input {
+    @apply h-auto cursor-pointer py-2 text-stormy-teal-400;
+  }
+  input[type='file'].form-input::file-selector-button {
+    @apply me-3 cursor-pointer rounded-md border-0 bg-stormy-teal-900 px-3 py-1.5 text-sm font-semibold text-yale-blue;
+  }
+  ::selection {
+    @apply bg-soft-apricot-800 text-yale-blue;
+  }
+}
+
+/* Native select with our own chevron. The app is RTL only, so the chevron sits on the left. */
+select.form-input {
+  appearance: none;
+  cursor: pointer;
+  padding-inline-end: 2.5rem;
+  min-width: 10rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%233c6e71' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.75rem center;
+  background-size: 1.1rem;
+}
+input[type='file'].form-input::file-selector-button:hover {
+  background: var(--color-stormy-teal-800);
+}
+select.form-input:disabled {
+  opacity: 0.7;
+}
+select.form-input option {
+  color: var(--color-yale-blue);
+  background: #fff;
+}
+
+/* Dark mode: the light tokens are remapped, so components need no dark: classes.
+   Shade scales are mirrored (light backgrounds become dark, dark text becomes light). */
+.dark {
+  color-scheme: dark;
+  --color-surface: #14213d;
+  --color-graphite: #e5e5e5;
+  --color-alabaster-grey: #14213d;
+  --color-alabaster-grey-800: #0c1425;
+  --color-alabaster-grey-900: #101b31;
+  --color-alabaster-grey-400: #29447e;
+  --color-alabaster-grey-100: #fafafa;
+  --color-yale-blue: #e5e5e5;
+  --color-yale-blue-100: #fafafa;
+  --color-yale-blue-200: #beccea;
+  --color-yale-blue-300: #beccea;
+  --color-yale-blue-400: #29447e;
+  --color-yale-blue-500: #beccea;
+  --color-yale-blue-600: #7e99d5;
+  --color-yale-blue-700: #3e67bf;
+  --color-yale-blue-800: #29447e;
+  --color-yale-blue-900: #101b31;
+  --color-stormy-teal: #b8b8b8;
+  --color-stormy-teal-100: #fafafa;
+  --color-stormy-teal-200: #f5f5f5;
+  --color-stormy-teal-300: #f0f0f0;
+  --color-stormy-teal-400: #b8b8b8;
+  --color-stormy-teal-500: #b8b8b8;
+  --color-stormy-teal-600: #8a8a8a;
+  --color-stormy-teal-700: #5c5c5c;
+  --color-stormy-teal-800: #29447e;
+  --color-stormy-teal-900: #1f3158;
+  --color-soft-apricot: #fca311;
+  --color-soft-apricot-100: #ffedd0;
+  --color-soft-apricot-200: #fedaa0;
+  --color-soft-apricot-300: #fedaa0;
+  --color-soft-apricot-400: #fec871;
+  --color-soft-apricot-500: #fca311;
+  --color-soft-apricot-600: #fdb541;
+  --color-soft-apricot-700: #a16402;
+  --color-soft-apricot-800: #6b4201;
+  --color-soft-apricot-900: #362101;
+  --color-vibrant-coral: #fdb541;
+  --color-vibrant-coral-100: #ffedd0;
+  --color-vibrant-coral-200: #fedaa0;
+  --color-vibrant-coral-300: #fec871;
+  --color-vibrant-coral-400: #fdb541;
+  --color-vibrant-coral-500: #fca311;
+  --color-vibrant-coral-600: #d68502;
+  --color-vibrant-coral-700: #a16402;
+  --color-vibrant-coral-800: #6b4201;
+  --color-vibrant-coral-900: #362101;
+}
+/* Areas that are dark in both themes (sidebar, highlight cards) keep the light-mode blues. */
+.dark .keep-colors {
+  --color-stormy-teal: #3c6e71;
+  --color-stormy-teal-100: #0c1617;
+  --color-stormy-teal-200: #182c2d;
+  --color-stormy-teal-300: #244344;
+  --color-stormy-teal-400: #30595b;
+  --color-stormy-teal-500: #3c6e71;
+  --color-stormy-teal-600: #539a9e;
+  --color-stormy-teal-700: #7bb6b9;
+  --color-stormy-teal-800: #a7ced1;
+  --color-stormy-teal-900: #d3e7e8;
+  --color-yale-blue: #284b63;
+  --color-yale-blue-100: #080f14;
+  --color-yale-blue-200: #101e27;
+  --color-yale-blue-300: #182d3b;
+  --color-yale-blue-400: #203c4e;
+  --color-yale-blue-500: #284b63;
+  --color-yale-blue-600: #3e7397;
+  --color-yale-blue-700: #6099be;
+  --color-yale-blue-800: #95bbd4;
+  --color-yale-blue-900: #cadde9;
+}
+
+/* Printing: A4 sheet only (the layout hides its chrome with print:hidden). */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  body {
+    background: #fff !important;
+  }
+  .sheet {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

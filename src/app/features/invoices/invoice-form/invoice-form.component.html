@@ -1,0 +1,221 @@
+<section class="mx-auto max-w-3xl space-y-6">
+  <a [routerLink]="['/customers', id()]" class="text-sm text-stormy-teal hover:underline">→ العودة إلى العميل</a>
+  <div>
+    <h1 class="text-2xl font-bold">فاتورة جديدة</h1>
+    @if (customer.value(); as c) {
+      <p class="mt-1 text-stormy-teal">{{ c.name }} · {{ c.governorate }}</p>
+    }
+  </div>
+
+  @if (visitId()) {
+    <p role="note" class="rounded-lg bg-stormy-teal-900 px-3 py-2 text-sm text-stormy-teal">
+      مرتبطة بالزيارة الجارية.
+      <a [routerLink]="['/visits', visitId()]" class="font-semibold underline">العودة إلى الزيارة</a>
+    </p>
+  }
+
+  @if (customer.value()?.status === CustomerStatus.REJECTED) {
+    <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">لا يمكن إنشاء فاتورة لعميل مرفوض.</p>
+  } @else if (products.error() || customer.error()) {
+    <div role="alert" class="card space-y-3 text-center">
+      <p class="text-sm">حدث خطأ أثناء تحميل البيانات.</p>
+      <button type="button" class="btn-outline" (click)="products.reload(); customer.reload()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-6">
+      <div class="card grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="invoice-number" class="form-label">رقم الفاتورة *</label>
+          <input id="invoice-number" formControlName="invoiceNumber" class="form-input" dir="ltr" autocomplete="off"
+            [attr.aria-invalid]="form.controls.invoiceNumber.invalid && form.controls.invoiceNumber.touched" />
+          <p class="mt-1 text-xs text-stormy-teal">الرقم المكتوب في دفتر الفواتير.</p>
+        </div>
+        @if (isManager) {
+          <div>
+            <label for="warehouse" class="form-label">البيع من مخزن *</label>
+            <select id="warehouse" formControlName="warehouseId" class="form-input"
+              [attr.aria-invalid]="form.controls.warehouseId.invalid && form.controls.warehouseId.touched">
+              <option value="" disabled>اختر المخزن</option>
+              @for (w of warehouses.value() ?? []; track w.id) {
+                <option [value]="w.id">{{ w.name }}</option>
+              }
+            </select>
+          </div>
+        } @else if (stock.value()?.warehouseName; as name) {
+          <div>
+            <p class="form-label">البيع من</p>
+            <p class="text-sm">عهدتك أولاً، والباقي من مخزن <span class="font-semibold">{{ name }}</span>.</p>
+          </div>
+        }
+      </div>
+      @if (noWarehouse()) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">
+          لم يتم ربطك بمخزن بعد، لذلك لا يمكنك البيع. تواصل مع الإدارة.
+        </p>
+      }
+
+      <!-- Items -->
+      <div class="card space-y-4">
+        <h2 class="font-semibold">الأصناف</h2>
+        @if (products.isLoading()) {
+          <p class="text-sm text-stormy-teal" role="status">جاري تحميل الأصناف...</p>
+        }
+        <div formArrayName="items" class="space-y-4">
+          @for (row of items.controls; track row; let i = $index) {
+            <div [formGroupName]="i" class="grid gap-3 rounded-lg border border-stormy-teal-900 p-3 sm:grid-cols-12 sm:items-end">
+              <div class="sm:col-span-6">
+                <label [for]="'product-' + i" class="form-label">الصنف</label>
+                <select [id]="'product-' + i" formControlName="productId" class="form-input">
+                  <option value="" disabled>اختر الصنف</option>
+                  @for (p of products.value() ?? []; track p.id) {
+                    @if (!isTaken(p.id, i)) {
+                      <option [value]="p.id">{{ p.name }}{{ p.unit ? ' (' + unitLabels[p.unit] + ')' : '' }}</option>
+                    }
+                  }
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label [for]="'qty-' + i" class="form-label">الكمية</label>
+                <input [id]="'qty-' + i" type="number" min="1" step="1" inputmode="numeric" formControlName="quantity" class="form-input" dir="ltr" />
+              </div>
+              <div class="text-sm sm:col-span-3">
+                @if (lines()[i]?.product; as p) {
+                  <p class="text-stormy-teal">السعر: {{ p.price | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                  <p class="font-semibold">الإجمالي: {{ lines()[i].total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                }
+              </div>
+              <div class="sm:col-span-1">
+                @if (items.length > 1) {
+                  <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="removeItem(i)"
+                    [attr.aria-label]="'حذف السطر ' + (i + 1)">حذف</button>
+                }
+              </div>
+              @if (lines()[i]?.product && stock.hasValue()) {
+                @if (lines()[i].overStock) {
+                  <p class="form-error sm:col-span-12" role="alert">
+                    المتاح {{ lines()[i].custody + lines()[i].warehouse }} فقط{{ isManager ? '' : ' (عهدتك ' + lines()[i].custody + ' + المخزن ' + lines()[i].warehouse + ')' }}.
+                  </p>
+                } @else if (!isManager) {
+                  <p class="text-xs text-stormy-teal sm:col-span-12">
+                    من عهدتك {{ lines()[i].fromCustody }}
+                    @if (lines()[i].fromWarehouse) {
+                      + من المخزن {{ lines()[i].fromWarehouse }}
+                    }
+                    <span class="text-stormy-teal-600">(المتاح: عهدة {{ lines()[i].custody }}، مخزن {{ lines()[i].warehouse }})</span>
+                  </p>
+                } @else {
+                  <p class="text-xs text-stormy-teal sm:col-span-12">المتاح في المخزن: {{ lines()[i].warehouse }}</p>
+                }
+              }
+            </div>
+          }
+        </div>
+        <button type="button" class="btn-outline" (click)="addItem()">+ إضافة صنف</button>
+      </div>
+
+      <!-- Payment -->
+      <div class="card space-y-4">
+        <h2 class="font-semibold">السداد</h2>
+        @if (pendingPayments() > 0) {
+          <p class="text-xs text-stormy-teal">فيه {{ pendingPayments() | currency: 'EGP' : 'symbol' : '1.0-2' }} محصّلة ولسه متسلمتش للخزنة، ومش محسوبة هنا.</p>
+        }
+        @if (!isManager) {
+          <p class="text-xs text-stormy-teal">المبلغ اللي تستلمه يفضل في خزنتك لحد ما تسلّمه للإدارة، ووقتها يتخصم من مديونية العميل.</p>
+        }
+        <dl class="grid grid-cols-2 gap-3 rounded-lg bg-alabaster-grey-800 p-4 text-center sm:grid-cols-4">
+          <div>
+            <dt class="text-xs text-stormy-teal">مديونية سابقة</dt>
+            <dd class="text-lg font-bold">{{ previousDebt() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-stormy-teal">إجمالي الفاتورة</dt>
+            <dd class="text-lg font-bold">{{ total() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-stormy-teal">المدفوع</dt>
+            <dd class="text-lg font-bold">{{ paid() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-stormy-teal">إجمالي المديونية بعد الفاتورة</dt>
+            <dd class="text-lg font-bold text-vibrant-coral-400">{{ debtAfter() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+          </div>
+        </dl>
+        @if (previousDebtPaid() > 0) {
+          <p class="rounded-lg bg-yale-blue-900 px-3 py-2 text-sm text-yale-blue-500" role="status">
+            الفاتورة مدفوعة بالكامل، و{{ previousDebtPaid() | currency: 'EGP' : 'symbol' : '1.0-2' }} تُخصم من المديونية السابقة.
+          </p>
+        } @else if (remaining() > 0 && paid() > 0) {
+          <p class="text-sm text-stormy-teal">المتبقي من الفاتورة (آجل): {{ remaining() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        }
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="paid" class="form-label">المبلغ المدفوع مقدمًا</label>
+            <input id="paid" type="number" min="0" step="0.01" inputmode="decimal" formControlName="paidAmount" class="form-input" dir="ltr" aria-describedby="paid-hint" />
+            <p id="paid-hint" class="mt-1 text-xs text-stormy-teal">
+              يمكن دفع أكثر من الفاتورة لسداد مديونية سابقة (حتى {{ maxPaid() | currency: 'EGP' : 'symbol' : '1.0-2' }}).
+            </p>
+          </div>
+          @if (paid() > 0) {
+            <div>
+              <label for="method" class="form-label">طريقة السداد *</label>
+              <select id="method" formControlName="paymentMethod" class="form-input">
+                <option value="" disabled>اختر طريقة السداد</option>
+                @for (m of methods; track m) {
+                  <option [value]="m">{{ methodLabels[m] }}</option>
+                }
+              </select>
+            </div>
+          }
+          @if (isCheque()) {
+            <div>
+              <label for="cheque-number" class="form-label">رقم الشيك</label>
+              <input id="cheque-number" formControlName="chequeNumber" class="form-input" dir="ltr" autocomplete="off" />
+            </div>
+            <div>
+              <label for="cheque-date" class="form-label">تاريخ استحقاق الشيك</label>
+              <input id="cheque-date" type="date" formControlName="chequeDueDate" class="form-input" />
+            </div>
+          }
+        </div>
+        @if (paymentError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <!-- Attachments -->
+      <div class="card space-y-4">
+        <h2 class="font-semibold">المرفقات</h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="receipt" class="form-label">صورة الإيصال (اختياري)</label>
+            <input id="receipt" type="file" [accept]="accept" class="form-input" (change)="pickFile($event, AttachmentKind.RECEIPT)" />
+          </div>
+          @if (isCheque()) {
+            <div>
+              <label for="cheque-file" class="form-label">صورة الشيك (اختياري)</label>
+              <input id="cheque-file" type="file" [accept]="accept" class="form-input" (change)="pickFile($event, AttachmentKind.CHEQUE)" />
+            </div>
+          }
+        </div>
+        <p class="text-xs text-stormy-teal">صور أو PDF، بحد أقصى 5 ميجابايت. يمكن رفعها لاحقًا من صفحة الفاتورة.</p>
+        @if (fileError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div class="card">
+        <label for="notes" class="form-label">ملاحظات</label>
+        <textarea id="notes" formControlName="notes" rows="2" class="form-input"></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || !!paymentError() || hasOverStock() || noWarehouse() || saving()">
+        {{ saving() ? 'جاري الحفظ...' : 'حفظ الفاتورة' }}
+      </button>
+
+      @if (error(); as message) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+      }
+    </form>
+  }
+</section>

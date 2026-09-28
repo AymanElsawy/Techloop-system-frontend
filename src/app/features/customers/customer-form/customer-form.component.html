@@ -1,0 +1,114 @@
+<section class="mx-auto max-w-2xl space-y-6">
+  <a [routerLink]="id() ? ['/customers', id()] : '/customers'" class="text-sm text-stormy-teal hover:underline">→ رجوع</a>
+  <h1 class="text-2xl font-bold">{{ id() ? 'تعديل العميل' : 'عميل جديد' }}</h1>
+
+  @if (!isManager && !id()) {
+    <p role="note" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+      سيظهر العميل بانتظار موافقة الإدارة، ويمكنك جدولة زيارات له في هذه الأثناء.
+    </p>
+  }
+
+  @if (contactOnly()) {
+    <p role="note" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+      يمكنك تعديل بيانات التواصل والعنوان فقط. الاسم والنوع والمحافظة تعدلها الإدارة.
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="text-sm text-stormy-teal" role="status">جاري تحميل بيانات العميل...</p>
+  } @else if (loadError()) {
+    <div role="alert" class="card space-y-3 text-center">
+      <p class="text-sm">حدث خطأ أثناء تحميل بيانات العميل.</p>
+      <button type="button" class="btn-outline" (click)="load()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card space-y-5">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="name" class="form-label">اسم العميل *</label>
+          <input id="name" formControlName="name" class="form-input" autocomplete="off"
+            [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" aria-describedby="name-error" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <p id="name-error" class="form-error">اسم العميل مطلوب (حرفان على الأقل).</p>
+          }
+        </div>
+
+        <div>
+          <label for="type" class="form-label">نوع العميل</label>
+          <select id="type" formControlName="type" class="form-input">
+            @for (t of types; track t) {
+              <option [value]="t">{{ typeLabels[t] }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label for="phone" class="form-label">الهاتف</label>
+          <input id="phone" type="tel" formControlName="phone" class="form-input" dir="ltr" autocomplete="off"
+            [attr.aria-invalid]="form.controls.phone.invalid && form.controls.phone.touched" aria-describedby="phone-error" />
+          @if (form.controls.phone.touched && form.controls.phone.invalid) {
+            <p id="phone-error" class="form-error">رقم الهاتف غير صحيح.</p>
+          }
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="contact" class="form-label">الشخص المسؤول</label>
+          <input id="contact" formControlName="contactPerson" class="form-input" autocomplete="off" />
+        </div>
+      </div>
+
+      <fieldset class="space-y-5 border-t border-stormy-teal-900 pt-5">
+        <legend class="sr-only">العنوان</legend>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="governorate" class="form-label">المحافظة *</label>
+            <select id="governorate" formControlName="governorate" class="form-input"
+              [attr.aria-invalid]="form.controls.governorate.invalid && form.controls.governorate.touched" aria-describedby="gov-error">
+              <option value="" disabled>اختر المحافظة</option>
+              @for (g of governorates; track g) {
+                <option [value]="g">{{ g }}</option>
+              }
+            </select>
+            @if (form.controls.governorate.touched && form.controls.governorate.invalid) {
+              <p id="gov-error" class="form-error">المحافظة مطلوبة.</p>
+            }
+          </div>
+          <div>
+            <label for="city" class="form-label">المدينة</label>
+            <input id="city" formControlName="city" class="form-input" autocomplete="off" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="address" class="form-label">العنوان</label>
+            <input id="address" formControlName="address" class="form-input" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn-outline" [disabled]="locating()" (click)="captureLocation()">
+            {{ locating() ? 'جاري تحديد الموقع...' : location() ? 'تحديث الموقع' : 'تحديد الموقع (GPS)' }}
+          </button>
+          @if (location()) {
+            <span class="text-sm text-yale-blue-600" role="status">تم تحديد الموقع</span>
+            <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="location.set(null)">إزالة</button>
+          }
+          @if (locationError()) {
+            <span class="text-sm text-vibrant-coral-400" role="alert">تعذر تحديد الموقع. تأكد من السماح بالوصول للموقع.</span>
+          }
+        </div>
+      </fieldset>
+
+      <div>
+        <label for="notes" class="form-label">ملاحظات</label>
+        <textarea id="notes" formControlName="notes" rows="3" class="form-input"></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
+        {{ saving() ? 'جاري الحفظ...' : id() ? 'حفظ التعديلات' : 'إضافة العميل' }}
+      </button>
+
+      @if (error(); as message) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+      }
+    </form>
+  }
+</section>

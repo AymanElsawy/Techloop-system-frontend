@@ -1,0 +1,61 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">الزيارات</h1>
+    <a routerLink="/visits/new" class="btn-primary">زيارة جديدة</a>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="inline-flex rounded-lg border border-stormy-teal-800 bg-surface p-1" role="group" aria-label="الفترة">
+      @for (p of periods; track p.value) {
+        <button
+          type="button"
+          class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+          [class]="period() === p.value ? 'bg-stormy-teal text-white dark:bg-orange dark:text-black' : 'text-yale-blue hover:bg-stormy-teal-900'"
+          [attr.aria-pressed]="period() === p.value"
+          (click)="period.set(p.value)"
+        >
+          {{ p.label }}
+        </button>
+      }
+    </div>
+
+    <label class="sr-only" for="status-filter">الحالة</label>
+    <select id="status-filter" class="form-input w-auto" [value]="status()" (change)="onStatusChange($event)">
+      <option value="">كل الحالات</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ statusLabels[s] }}</option>
+      }
+    </select>
+  </div>
+
+  @if (visits.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل الزيارات..." />
+  } @else if (visits.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الزيارات." (retry)="visits.reload()" />
+  } @else if (!visits.value()?.length) {
+    <app-status-message type="empty" [message]="emptyMessage()" />
+  } @else {
+    <ul class="card divide-y divide-stormy-teal-900 p-0">
+      @for (visit of visits.value(); track visit.id) {
+        <li>
+          <a
+            [routerLink]="['/visits', visit.id]"
+            class="grid grid-cols-2 items-center gap-2 px-5 py-4 transition hover:bg-alabaster-grey-800 sm:grid-cols-4"
+          >
+            <span>
+              <span class="block font-semibold">{{ visit.customer.name }}</span>
+              <span class="text-xs text-stormy-teal">{{ purposeLabels[visit.purpose] }} · {{ visit.customer.governorate }}</span>
+            </span>
+            <span class="text-sm text-stormy-teal">{{ visit.salesRep.name }}</span>
+            <span class="text-sm" dir="ltr">{{ visit.scheduledAt | date: 'd MMM · HH:mm' }}</span>
+            <span>
+              <span class="rounded-full px-2.5 py-1 text-xs font-medium" [class]="statusClasses[visit.status]">
+                {{ statusLabels[visit.status] }}
+              </span>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

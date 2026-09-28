@@ -1,0 +1,54 @@
+import { Component, effect, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { rxResource } from '@angular/core/rxjs-interop';
+
+import { httpErrorMessage } from '../../../core/http/http-error';
+import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { Company } from '../documents.model';
+import { DocumentsService } from '../documents.service';
+
+/** /documents/company — details printed on every document. Managers only. */
+@Component({
+  selector: 'app-company-form',
+  imports: [ReactiveFormsModule, RouterLink, StatusMessageComponent],
+  templateUrl: './company-form.component.html',
+})
+export class CompanyFormComponent {
+  private readonly documents = inject(DocumentsService);
+
+  protected readonly company = rxResource({ stream: () => this.documents.getCompany() });
+  protected readonly form = inject(NonNullableFormBuilder).group({
+    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
+    phone: [''],
+    address: [''],
+    taxNumber: [''],
+    commercialRegister: [''],
+    footer: [''],
+  });
+  protected readonly saving = signal(false);
+  protected readonly message = signal<{ ok: boolean; text: string } | null>(null);
+
+  constructor() {
+    effect(() => {
+      const c = this.company.value();
+      if (c) this.form.reset(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v ?? ''])));
+    });
+  }
+
+  protected save(): void {
+    if (this.form.invalid) return this.form.markAllAsTouched();
+    this.saving.set(true);
+    this.message.set(null);
+    this.documents.updateCompany(this.form.getRawValue() as Company).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.message.set({ ok: true, text: 'اتحفظت. هتظهر على كل الفواتير.' });
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.message.set({ ok: false, text: httpErrorMessage(err) });
+      },
+    });
+  }
+}

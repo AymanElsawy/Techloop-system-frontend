@@ -1,0 +1,74 @@
+<section class="mx-auto max-w-xl space-y-6">
+  <a routerLink="/users" class="text-sm text-stormy-teal hover:underline">→ العودة إلى المستخدمين</a>
+  <h1 class="text-2xl font-bold">مستخدم جديد</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card space-y-5">
+    <div>
+      <label for="name" class="form-label">الاسم</label>
+      <input id="name" formControlName="name" class="form-input" autocomplete="off"
+        [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" aria-describedby="name-error" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p id="name-error" class="form-error">الاسم مطلوب (حرفان على الأقل).</p>
+      }
+    </div>
+
+    <div>
+      <label for="email" class="form-label">البريد الإلكتروني</label>
+      <input id="email" type="email" formControlName="email" class="form-input" dir="ltr" autocomplete="off"
+        [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched" aria-describedby="email-error" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <p id="email-error" class="form-error">
+          {{ form.controls.email.hasError('required') ? 'البريد الإلكتروني مطلوب.' : 'صيغة البريد الإلكتروني غير صحيحة.' }}
+        </p>
+      }
+    </div>
+
+    <div>
+      <label for="password" class="form-label">كلمة المرور</label>
+      <input id="password" type="password" formControlName="password" class="form-input" dir="ltr" autocomplete="new-password"
+        [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched" aria-describedby="password-error" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <p id="password-error" class="form-error">كلمة المرور 8 أحرف على الأقل.</p>
+      }
+    </div>
+
+    <fieldset>
+      <legend class="form-label">الدور</legend>
+      <div class="flex gap-3">
+        @for (role of roles; track role) {
+          <label class="flex flex-1 cursor-pointer items-center gap-2 rounded-lg border border-stormy-teal-800 bg-surface px-3 py-2.5 text-sm has-checked:border-stormy-teal has-checked:bg-stormy-teal-900">
+            <input type="radio" formControlName="role" [value]="role" class="accent-stormy-teal" />
+            {{ roleLabels[role] }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    @if (isSalesRep()) {
+      <app-governorate-picker [(selected)]="governorates" />
+      @if (!governorates().length) {
+        <p class="text-xs text-soft-apricot-300" role="status">المندوب بدون محافظات لن يرى أي عميل.</p>
+      }
+      <div>
+        <label for="warehouse" class="form-label">المخزن التابع له</label>
+        <select id="warehouse" formControlName="warehouse" class="form-input">
+          <option value="">بدون مخزن</option>
+          @for (w of warehouses.value() ?? []; track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+        @if (!form.controls.warehouse.value) {
+          <p class="mt-1 text-xs text-soft-apricot-300" role="status">المندوب بدون مخزن لن يستطيع البيع.</p>
+        }
+      </div>
+    }
+
+    <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
+      {{ saving() ? 'جاري الحفظ...' : 'إنشاء المستخدم' }}
+    </button>
+
+    @if (error(); as message) {
+      <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-center text-sm text-vibrant-coral-300">{{ message }}</p>
+    }
+  </form>
+</section>

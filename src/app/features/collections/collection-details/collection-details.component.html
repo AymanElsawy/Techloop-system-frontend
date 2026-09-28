@@ -1,0 +1,104 @@
+<section class="space-y-6">
+  @if (collection.value(); as col) {
+    <div class="flex flex-wrap gap-4 text-sm">
+      <a [routerLink]="['/customers', col.customer.id]" class="text-stormy-teal hover:underline">→ العودة إلى العميل</a>
+      @if (col.visit) {
+        <a [routerLink]="['/visits', col.visit.id]" class="text-vibrant-coral-400 hover:underline">→ العودة إلى الزيارة</a>
+      }
+    </div>
+  }
+
+  @if (collection.isLoading() && !collection.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل التحصيل..." />
+  } @else if (collection.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل التحصيل." (retry)="collection.reload()" />
+  } @else if (collection.value(); as col) {
+    @if (uploadFailedOnCreate) {
+      <p role="alert" class="rounded-lg bg-soft-apricot-900 px-3 py-2 text-sm text-soft-apricot-200">
+        تم حفظ التحصيل، لكن تعذر رفع المرفقات. ارفعها مرة أخرى من قسم المرفقات.
+      </p>
+    }
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold">تحصيل · إيصال رقم <span dir="ltr">{{ col.receiptNumber }}</span></h1>
+        @if (col.status === Status.CANCELLED) {
+          <span class="rounded-full bg-vibrant-coral-900 px-3 py-1 text-sm font-medium text-vibrant-coral-300">ملغى</span>
+        } @else {
+          <app-deposit-badge [entry]="col" />
+        }
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a [routerLink]="['/documents/COLLECTION', col.id]" class="btn-primary">طباعة إيصال / PDF</a>
+        @if (isManager && col.status === Status.ACTIVE && !showCancel()) {
+          <button type="button" class="btn-outline" (click)="showCancel.set(true)">إلغاء التحصيل</button>
+        }
+      </div>
+    </div>
+
+    @if (showCancel()) {
+      <div class="card space-y-3">
+        <label for="cancel-reason" class="form-label">سبب الإلغاء</label>
+        <textarea id="cancel-reason" rows="2" class="form-input" [formControl]="cancelReason"></textarea>
+        <p class="text-xs text-stormy-teal">الإلغاء يرجع المبلغ على مديونية العميل.</p>
+        <div class="flex gap-3">
+          <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
+          <button type="button" class="btn-outline" (click)="showCancel.set(false)">رجوع</button>
+        </div>
+        @if (cancelError(); as message) {
+          <p role="alert" class="form-error">{{ message }}</p>
+        }
+      </div>
+    }
+
+    @if (col.status === Status.CANCELLED) {
+      <p role="note" class="rounded-lg bg-vibrant-coral-900 px-4 py-3 text-sm text-vibrant-coral-300">
+        ألغاه {{ col.cancelledBy?.name }} بتاريخ {{ col.cancelledAt | date: 'd MMMM y' }}. السبب: {{ col.cancelReason }}
+      </p>
+    }
+
+    <dl class="card grid gap-5 sm:grid-cols-3">
+      <div>
+        <dt class="text-sm text-stormy-teal">العميل</dt>
+        <dd class="mt-1 font-semibold">
+          <a [routerLink]="['/customers', col.customer.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ col.customer.name }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">المندوب</dt>
+        <dd class="mt-1 font-semibold">{{ col.createdBy.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">التاريخ</dt>
+        <dd class="mt-1 font-semibold">{{ col.createdAt | date: 'd MMMM y · HH:mm' }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">المبلغ</dt>
+        <dd class="mt-1 text-xl font-bold">{{ col.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">طريقة السداد</dt>
+        <dd class="mt-1 font-semibold">{{ methodLabels[col.paymentMethod] }}</dd>
+      </div>
+      @if (col.paymentMethod === PaymentMethod.CHEQUE) {
+        <div>
+          <dt class="text-sm text-stormy-teal">الشيك</dt>
+          <dd class="mt-1 font-semibold">
+            رقم <span dir="ltr">{{ col.chequeNumber ?? '—' }}</span>
+            @if (col.chequeDueDate) {
+              · يستحق {{ col.chequeDueDate | date: 'd MMM y' }}
+            }
+          </dd>
+        </div>
+      }
+      @if (col.notes) {
+        <div class="sm:col-span-3">
+          <dt class="text-sm text-stormy-teal">ملاحظات</dt>
+          <dd class="mt-1 whitespace-pre-line">{{ col.notes }}</dd>
+        </div>
+      }
+    </dl>
+
+    <app-attachments [attachments]="col.attachments" [download]="downloadFn" [upload]="uploadFn" />
+  }
+</section>

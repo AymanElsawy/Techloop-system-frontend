@@ -1,0 +1,104 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">الفواتير</h1>
+      <p class="mt-1 text-sm text-stormy-teal">كل عملية في النظام ليها مستند تقدر تطبعه A4 أو تحفظه PDF.</p>
+    </div>
+    @if (isManager) {
+      <a routerLink="/documents/company" class="btn-outline">بيانات الشركة على الفواتير</a>
+    }
+  </div>
+
+  <!-- Type tabs -->
+  <div class="flex flex-wrap gap-2" role="group" aria-label="نوع المستند">
+    <button type="button" class="btn" [class]="type() === '' ? 'btn-primary' : 'btn-outline'" (click)="type.set('')">الكل</button>
+    @for (t of types; track t) {
+      <button type="button" class="btn" [class]="type() === t ? 'btn-primary' : 'btn-outline'" (click)="type.set(t)">
+        {{ typeLabels[t] }}
+      </button>
+    }
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="form-label" for="doc-search">بحث</label>
+      <input id="doc-search" type="search" class="form-input w-64" placeholder="رقم المستند أو الاسم" [value]="search()" (input)="search.set(value($event))" />
+    </div>
+    <div>
+      <label class="form-label" for="doc-from">من</label>
+      <input id="doc-from" type="date" class="form-input" [value]="from()" (change)="from.set(value($event))" />
+    </div>
+    <div>
+      <label class="form-label" for="doc-to">إلى</label>
+      <input id="doc-to" type="date" class="form-input" [value]="to()" (change)="to.set(value($event))" />
+    </div>
+    @if (hasFilters()) {
+      <button type="button" class="btn-outline" (click)="clear()">مسح الفلاتر</button>
+    }
+  </div>
+
+  @if (list.isLoading() && !list.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الفواتير..." />
+  } @else if (list.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الفواتير." (retry)="list.reload()" />
+  } @else if (list.value(); as docs) {
+    @if (docs.length) {
+      <div class="card overflow-x-auto p-0">
+        <table class="w-full text-sm">
+          <thead class="table-head">
+            <tr>
+              <th class="px-4 py-3 text-start">النوع</th>
+              <th class="px-4 py-3 text-start">الرقم</th>
+              <th class="px-4 py-3 text-start">التاريخ</th>
+              <th class="px-4 py-3 text-start">الطرف</th>
+              <th class="px-4 py-3 text-start">بواسطة</th>
+              <th class="px-4 py-3 text-start">القيمة</th>
+              <th class="px-4 py-3"><span class="sr-only">إجراءات</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stormy-teal-900">
+            @for (d of docs; track d.type + d.id) {
+              <tr [class.opacity-60]="d.status === 'CANCELLED'">
+                <td class="px-4 py-3">
+                  <span class="rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap {{ typeClasses[d.type] }}">{{ typeLabels[d.type] }}</span>
+                  @if (d.status === 'CANCELLED') {
+                    <span class="ms-1 text-xs text-vibrant-coral-400">ملغاة</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-semibold text-right" dir="ltr">{{ d.number }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ d.date | date: 'd/M/y h:mm a' }}</td>
+                <td class="px-4 py-3">
+                  <span class="text-xs text-stormy-teal">{{ partyLabels[d.type] }}:</span> {{ d.party?.name ?? '—' }}
+                </td>
+                <td class="px-4 py-3">{{ d.by?.name ?? '—' }}</td>
+                <td class="px-4 py-3 whitespace-nowrap" [class.line-through]="d.status === 'CANCELLED'">
+                  @if (d.amount !== null) {
+                    {{ d.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  } @else {
+                    {{ d.quantity | number }} قطعة
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end gap-2">
+                    @if (detailsLink(d); as link) {
+                      <a [routerLink]="link" class="btn-outline h-9 px-3">عرض</a>
+                    }
+                    <a [routerLink]="['/documents', d.type, d.id]" class="btn-primary h-9 px-3">طباعة / PDF</a>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-stormy-teal">
+        {{ docs.length }} مستند
+        @if (type() && total()) {
+          · الإجمالي (بدون الملغي): <span class="font-bold">{{ total() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+        }
+      </p>
+    } @else {
+      <app-status-message type="empty" [message]="hasFilters() ? 'مفيش مستندات مطابقة للفلاتر.' : 'مفيش مستندات لسه.'" />
+    }
+  }
+</section>

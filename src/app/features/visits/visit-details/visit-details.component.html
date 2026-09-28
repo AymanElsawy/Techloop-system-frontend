@@ -1,0 +1,218 @@
+<section class="space-y-6">
+  <a routerLink="/visits" class="text-sm text-stormy-teal hover:underline">→ العودة إلى الزيارات</a>
+
+  @if (visit.isLoading() && !visit.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل الزيارة..." />
+  } @else if (visit.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الزيارة." (retry)="visit.reload()" />
+  } @else if (visit.value(); as v) {
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-2xl font-bold">زيارة {{ purposeLabels[v.purpose] }}</h1>
+      <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="statusClasses[v.status]">
+        {{ statusLabels[v.status] }}
+      </span>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-3">
+      <div class="space-y-6 lg:col-span-2">
+        <dl class="card grid grid-cols-2 gap-5">
+          <div>
+            <dt class="text-sm text-stormy-teal">العميل</dt>
+            <dd class="mt-1 font-semibold">
+              <a [routerLink]="['/customers', v.customer.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ v.customer.name }}</a>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-sm text-stormy-teal">المندوب</dt>
+            <dd class="mt-1 font-semibold">{{ v.salesRep.name }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-stormy-teal">التاريخ</dt>
+            <dd class="mt-1 font-semibold">{{ v.scheduledAt | date: 'd MMMM y' }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-stormy-teal">الوقت</dt>
+            <dd class="mt-1 font-semibold text-right" dir="ltr">{{ v.scheduledAt | date: 'HH:mm' }}</dd>
+          </div>
+          @if (v.startedAt) {
+            <div>
+              <dt class="text-sm text-stormy-teal">وقت البداية</dt>
+              <dd class="mt-1 font-semibold text-right" dir="ltr">{{ v.startedAt | date: 'HH:mm' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm text-stormy-teal">الموقع</dt>
+              <dd class="mt-1 font-semibold">{{ v.latitude != null ? 'تم التسجيل' : 'غير متاح' }}</dd>
+            </div>
+          }
+          @if (v.completedAt) {
+            <div>
+              <dt class="text-sm text-stormy-teal">وقت الانتهاء</dt>
+              <dd class="mt-1 font-semibold text-right" dir="ltr">{{ v.completedAt | date: 'HH:mm' }}</dd>
+            </div>
+          }
+          @if (v.nextVisitAt) {
+            <div>
+              <dt class="text-sm text-stormy-teal">الزيارة القادمة</dt>
+              <dd class="mt-1 font-semibold">{{ v.nextVisitAt | date: 'd MMMM y' }}</dd>
+            </div>
+          }
+          @if (v.notes) {
+            <div class="col-span-2">
+              <dt class="text-sm text-stormy-teal">ملاحظات</dt>
+              <dd class="mt-1 whitespace-pre-line">{{ v.notes }}</dd>
+            </div>
+          }
+          @if (v.productsDiscussed.length) {
+            <div class="col-span-2">
+              <dt class="text-sm text-stormy-teal">المنتجات التي تمت مناقشتها</dt>
+              <dd class="mt-2 flex flex-wrap gap-2">
+                @for (product of v.productsDiscussed; track product) {
+                  <span class="rounded-full bg-stormy-teal-900 px-3 py-1 text-xs">{{ product }}</span>
+                }
+              </dd>
+            </div>
+          }
+          @if (v.cancelReason) {
+            <div class="col-span-2">
+              <dt class="text-sm text-stormy-teal">سبب الإلغاء</dt>
+              <dd class="mt-1">{{ v.cancelReason }}</dd>
+            </div>
+          }
+          @if (v.customerFeedback) {
+            <div class="col-span-2">
+              <dt class="text-sm text-stormy-teal">ملاحظات العميل</dt>
+              <dd class="mt-1 whitespace-pre-line">{{ v.customerFeedback }}</dd>
+            </div>
+          }
+        </dl>
+
+        <!-- Visit actions -->
+        @if ((v.status === Status.PLANNED && (isAssignedRep() || isManager)) || (v.status === Status.IN_PROGRESS && isAssignedRep())) {
+          <div class="card space-y-4">
+            @if (v.status === Status.PLANNED) {
+              <div class="flex flex-wrap gap-3">
+                @if (isAssignedRep()) {
+                  <button type="button" class="btn-primary" [disabled]="pending()" (click)="start()">
+                    {{ pending() ? 'جاري بدء الزيارة...' : 'بدء الزيارة' }}
+                  </button>
+                }
+                <button type="button" class="btn-outline" [disabled]="pending()" (click)="cancel()">إلغاء الزيارة</button>
+              </div>
+            } @else if (!showCompleteForm()) {
+              <button type="button" class="btn-accent" (click)="showCompleteForm.set(true)">إنهاء الزيارة</button>
+            } @else {
+              <form [formGroup]="completeForm" (ngSubmit)="complete()" class="space-y-4">
+                <h2 class="font-semibold">إنهاء الزيارة</h2>
+                <div>
+                  <label for="notes" class="form-label">ملاحظات</label>
+                  <textarea id="notes" formControlName="notes" rows="3" class="form-input"></textarea>
+                </div>
+                <div>
+                  <label for="products" class="form-label">المنتجات التي تمت مناقشتها</label>
+                  <input id="products" formControlName="productsDiscussed" class="form-input" aria-describedby="products-hint" />
+                  <p id="products-hint" class="mt-1 text-xs text-stormy-teal">افصل بين المنتجات بفاصلة.</p>
+                </div>
+                <div>
+                  <label for="feedback" class="form-label">ملاحظات العميل</label>
+                  <textarea id="feedback" formControlName="customerFeedback" rows="3" class="form-input"></textarea>
+                </div>
+                <div>
+                  <label for="next-visit" class="form-label">موعد الزيارة القادمة</label>
+                  <input id="next-visit" type="datetime-local" formControlName="nextVisitAt" class="form-input" />
+                </div>
+                <div class="flex gap-3">
+                  <button type="submit" class="btn-accent" [disabled]="pending()">
+                    {{ pending() ? 'جاري الحفظ...' : 'حفظ وإنهاء الزيارة' }}
+                  </button>
+                  <button type="button" class="btn-outline" (click)="showCompleteForm.set(false)">رجوع</button>
+                </div>
+              </form>
+            }
+
+            @if (actionError(); as message) {
+              <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ message }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      <aside class="space-y-6">
+        <!-- Customer context -->
+        <div class="card space-y-3">
+          <h2 class="font-semibold">العميل</h2>
+          <a [routerLink]="['/customers', v.customer.id]" class="block text-lg font-bold hover:text-vibrant-coral-400 hover:underline">{{ v.customer.name }}</a>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-2">
+              <dt class="text-stormy-teal">الهاتف</dt>
+              <dd class="text-right" dir="ltr">
+                @if (v.customer.phone) {
+                  <a [href]="'tel:' + v.customer.phone" class="text-vibrant-coral-400 hover:underline">{{ v.customer.phone }}</a>
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+            <div class="flex justify-between gap-2">
+              <dt class="text-stormy-teal">العنوان</dt>
+              <dd class="text-left">{{ v.customer.governorate }}{{ v.customer.city ? ' - ' + v.customer.city : '' }}{{ v.customer.address ? '، ' + v.customer.address : '' }}</dd>
+            </div>
+            <div class="flex justify-between gap-2">
+              <dt class="text-stormy-teal">المديونية</dt>
+              <dd class="font-semibold text-vibrant-coral-400">{{ v.customer.debit | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+            </div>
+          </dl>
+          @if (mapsUrl(); as url) {
+            <a [href]="url" target="_blank" rel="noopener" class="text-sm text-vibrant-coral-400 hover:underline">عرض على الخريطة</a>
+          }
+        </div>
+
+        <!-- Sales and collections during this visit -->
+        <div class="card space-y-3">
+          <h2 class="font-semibold">خلال الزيارة</h2>
+          @if (v.status === Status.IN_PROGRESS && isAssignedRep()) {
+            <div class="grid grid-cols-2 gap-2">
+              <a [routerLink]="['/customers', v.customer.id, 'invoices', 'new']" [queryParams]="{ visitId: v.id }" class="btn-primary">فاتورة بيع</a>
+              <a [routerLink]="['/customers', v.customer.id, 'collections', 'new']" [queryParams]="{ visitId: v.id }" class="btn-accent">فاتورة تحصيل</a>
+            </div>
+          } @else if (v.status === Status.PLANNED) {
+            <p class="text-xs text-stormy-teal">ابدأ الزيارة لتسجيل فاتورة بيع أو فاتورة تحصيل.</p>
+          }
+
+          @if (linked.isLoading() && !linked.hasValue()) {
+            <p class="text-sm text-stormy-teal" role="status">جاري التحميل...</p>
+          } @else if (linked.error()) {
+            <button type="button" class="text-sm text-vibrant-coral-400 underline" (click)="linked.reload()">تعذر التحميل، إعادة المحاولة</button>
+          } @else if (linked.value(); as l) {
+            <dl class="grid grid-cols-2 gap-2 rounded-lg bg-alabaster-grey-800 p-3 text-center text-sm">
+              <div>
+                <dt class="text-xs text-stormy-teal">المبيعات</dt>
+                <dd class="font-bold">{{ salesTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-stormy-teal">المحصّل</dt>
+                <dd class="font-bold">{{ collectedTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+              </div>
+            </dl>
+            @if (!l.invoices.length && !l.collections.length) {
+              <p class="text-sm text-stormy-teal">لا توجد فواتير أو تحصيلات في هذه الزيارة.</p>
+            }
+            <ul class="space-y-2 text-sm">
+              @for (inv of l.invoices; track inv.id) {
+                <li class="flex justify-between gap-2" [class.opacity-60]="inv.status === InvoiceStatus.CANCELLED">
+                  <a [routerLink]="['/invoices', inv.id]" class="hover:text-vibrant-coral-400 hover:underline">فاتورة بيع <span dir="ltr">{{ inv.invoiceNumber }}</span></a>
+                  <span>{{ inv.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+                </li>
+              }
+              @for (col of l.collections; track col.id) {
+                <li class="flex justify-between gap-2" [class.opacity-60]="col.status === CollectionStatus.CANCELLED">
+                  <a [routerLink]="['/collections', col.id]" class="hover:text-vibrant-coral-400 hover:underline">تحصيل <span dir="ltr">{{ col.receiptNumber }}</span></a>
+                  <span>{{ col.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </aside>
+    </div>
+  }
+</section>

@@ -1,0 +1,52 @@
+<div class="card space-y-4">
+  <h2 class="font-semibold">المرفقات</h2>
+  @if (!attachments().length) {
+    <p class="text-sm text-stormy-teal">لا توجد مرفقات.</p>
+  }
+  <ul class="space-y-3">
+    @for (a of attachments(); track a.id) {
+      <li class="rounded-lg border border-stormy-teal-900 p-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span>
+            <strong>{{ kindLabels[a.kind] }}</strong> · {{ a.originalName }}
+            <span class="text-xs text-stormy-teal">({{ a.uploadedBy.name }}، {{ a.uploadedAt | date: 'd MMM y' }})</span>
+          </span>
+          @if (previews()[a.id]; as p) {
+            <a [href]="p.url" target="_blank" rel="noopener" class="text-vibrant-coral-400 hover:underline">فتح في صفحة جديدة</a>
+          } @else {
+            <button type="button" class="text-vibrant-coral-400 hover:underline" (click)="view(a)">عرض</button>
+          }
+        </div>
+        @if (previews()[a.id]; as p) {
+          @if (p.isImage) {
+            <img [src]="p.url" [alt]="kindLabels[a.kind]" class="mt-3 max-h-96 rounded-lg border border-stormy-teal-900" />
+          }
+        }
+      </li>
+    }
+  </ul>
+  @if (previewError(); as message) {
+    <p role="alert" class="form-error">{{ message }}</p>
+  }
+
+  <div class="flex flex-wrap items-end gap-3 border-t border-stormy-teal-900 pt-4">
+    <div>
+      <label for="upload-kind" class="form-label">نوع المرفق</label>
+      <select id="upload-kind" class="form-input" [formControl]="uploadKind">
+        @for (k of kinds; track k) {
+          <option [value]="k">{{ kindLabels[k] }}</option>
+        }
+      </select>
+    </div>
+    <div class="min-w-56 flex-1">
+      <label for="upload-file" class="form-label">الملف (صورة أو PDF، 5 ميجابايت كحد أقصى)</label>
+      <input #fileInput id="upload-file" type="file" [accept]="accept" class="form-input" (change)="pickFile($event)" />
+    </div>
+    <button type="button" class="btn-primary" [disabled]="!file() || uploading()" (click)="submit(fileInput)">
+      {{ uploading() ? 'جاري الرفع...' : 'رفع' }}
+    </button>
+  </div>
+  @if (uploadError(); as message) {
+    <p role="alert" class="form-error">{{ message }}</p>
+  }
+</div>

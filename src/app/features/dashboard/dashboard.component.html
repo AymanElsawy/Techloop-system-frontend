@@ -1,0 +1,349 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">أهلاً، {{ userName() }}</h1>
+      <p class="mt-1 text-sm text-stormy-teal">{{ today | date: 'EEEE d MMMM y' }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      @if (isManager) {
+        <a routerLink="/inventory/receive" class="btn-outline">وارد من مورد</a>
+        <a routerLink="/treasury" class="btn-outline">الخزنة</a>
+      } @else {
+        <a routerLink="/customers" class="btn-outline">العملاء</a>
+      }
+      <a routerLink="/visits/new" class="btn-primary">زيارة جديدة</a>
+      <button type="button" class="btn-outline" (click)="data.reload()" [disabled]="data.isLoading()" title="تحديث">↻</button>
+    </div>
+  </div>
+
+  @if (data.isLoading() && !data.hasValue()) {
+    <app-status-message type="loading" message="جاري تحميل البيانات..." />
+  } @else if (data.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الرئيسية." (retry)="data.reload()" />
+  } @else if (data.value(); as d) {
+    <!-- Main numbers -->
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="card">
+        <p class="text-sm text-stormy-teal">مبيعات اليوم</p>
+        <p class="mt-2 text-2xl font-bold tabular-nums">{{ d.sales.today.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        <p class="mt-1 text-xs text-stormy-teal">{{ d.sales.today.count }} فاتورة</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">مبيعات الشهر</p>
+        <p class="mt-2 text-2xl font-bold tabular-nums">{{ d.sales.month.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        <p class="mt-1 text-xs text-stormy-teal">{{ d.sales.month.count }} فاتورة</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">المحصّل هذا الشهر</p>
+        <p class="mt-2 text-2xl font-bold tabular-nums text-yale-blue">{{ d.collected.month | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        <p class="mt-1 text-xs text-stormy-teal">اليوم: {{ d.collected.today | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">{{ isManager ? 'مديونية العملاء' : 'مديونية عملائي' }}</p>
+        <p class="mt-2 text-2xl font-bold tabular-nums text-vibrant-coral-400">{{ d.customers.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        <p class="mt-1 text-xs text-stormy-teal">
+          {{ d.customers.debtors }} عميل مدين
+          @if (d.customers.pendingPayments) {
+            · تحت التسليم {{ d.customers.pendingPayments | currency: 'EGP' : 'symbol' : '1.0-0' }}
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- Money & stock -->
+    <div class="grid grid-cols-2 gap-4" [class]="isManager ? 'lg:grid-cols-5' : 'lg:grid-cols-3'">
+      @if (d.treasury; as t) {
+        <a routerLink="/treasury" class="card keep-colors col-span-2 bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95 lg:col-span-1">
+          <p class="text-sm text-yale-blue-800">رصيد الخزنة</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums">{{ t.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <ul class="mt-3 space-y-0.5 border-t border-yale-blue-400 pt-2 text-xs">
+            @for (m of t.byMethod; track m.method) {
+              <li class="flex justify-between gap-2">
+                <span class="text-yale-blue-800">{{ methodLabels[m.method] }}</span>
+                <span class="tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-0' }}</span>
+              </li>
+            }
+          </ul>
+        </a>
+        <a routerLink="/treasury" class="card transition hover:border-stormy-teal">
+          <p class="text-sm text-stormy-teal">مع المناديب (لم تُسلَّم)</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums" [class.text-vibrant-coral-400]="t.withReps > 0">{{ t.withReps | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="mt-1 text-xs text-stormy-teal">اضغط للاستلام</p>
+        </a>
+      }
+      @if (d.stock; as s) {
+        <a routerLink="/inventory/products" class="card transition hover:border-stormy-teal">
+          <p class="text-sm text-stormy-teal">قيمة المخزون (بسعر الشراء)</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums">{{ s.value | currency: 'EGP' : 'symbol' : '1.0-0' }}</p>
+          <p class="mt-1 text-xs" [class]="s.lowStock.length ? 'font-semibold text-vibrant-coral-400' : 'text-stormy-teal'">
+            {{ s.products }} صنف · {{ s.lowStock.length }} ناقص
+          </p>
+        </a>
+      }
+      @if (d.cashBox; as c) {
+        <a routerLink="/treasury" class="card keep-colors col-span-2 bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95 lg:col-span-1">
+          <p class="text-sm text-yale-blue-800">خزنتي (لم تُسلَّم)</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums">{{ c.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="mt-1 text-xs text-yale-blue-800">{{ c.count }} مستند</p>
+        </a>
+      }
+      @if (d.custody; as c) {
+        <a routerLink="/inventory" class="card transition hover:border-stormy-teal">
+          <p class="text-sm text-stormy-teal">عهدتي</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums">{{ c.quantity | number }}</p>
+          <p class="mt-1 text-xs text-stormy-teal">{{ c.items }} صنف</p>
+        </a>
+      }
+      <a routerLink="/visits" class="card transition hover:border-stormy-teal">
+        <p class="text-sm text-stormy-teal">زيارات اليوم</p>
+        <p class="mt-2 text-2xl font-bold tabular-nums">{{ visitsToday() }}</p>
+        <p class="mt-1 text-xs text-stormy-teal">
+          مكتملة {{ d.visits.today.COMPLETED }} · باقي {{ d.visits.today.PLANNED + d.visits.today.IN_PROGRESS }} · الشهر {{ d.visits.monthCompleted }}
+        </p>
+      </a>
+      @if (isManager) {
+        <a routerLink="/customers" class="card transition hover:border-stormy-teal">
+          <p class="text-sm text-stormy-teal">العملاء</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums">{{ d.customers.total }}</p>
+          <p class="mt-1 text-xs" [class]="d.customers.pendingApproval ? 'font-semibold text-vibrant-coral-400' : 'text-stormy-teal'">
+            {{ d.customers.pendingApproval }} بانتظار الموافقة
+          </p>
+        </a>
+      }
+    </div>
+
+    <!-- Month chart -->
+    <div class="card">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-semibold">حركة الشهر يوم بيوم</h2>
+        <div class="flex gap-4 text-xs text-stormy-teal">
+          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-yale-blue"></span> مبيعات</span>
+          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-orange"></span> تحصيل</span>
+        </div>
+      </div>
+      <div class="flex h-40 items-end gap-1" dir="ltr">
+        @for (day of chart(); track day.day) {
+          <div
+            class="group flex h-full flex-1 flex-col justify-end"
+            [title]="'يوم ' + day.day + ' — مبيعات ' + (day.sales | number: '1.0-2') + ' · تحصيل ' + (day.collected | number: '1.0-2')"
+          >
+            <div class="flex h-full items-end justify-center gap-px">
+              <div class="w-1/2 max-w-3 rounded-t-sm bg-yale-blue group-hover:opacity-80" [style.height.%]="day.salesPct"></div>
+              <div class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-orange group-hover:opacity-80" [style.height.%]="day.collectedPct"></div>
+            </div>
+            <span class="mt-1 text-center text-[10px] text-stormy-teal">{{ day.day }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2">
+      <!-- Today's visits -->
+      <div class="card p-0">
+        <div class="flex items-center justify-between border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold">زيارات اليوم</h2>
+          <div class="flex gap-1">
+            @for (s of visitStatuses; track s) {
+              <span class="rounded-full px-2 py-0.5 text-xs {{ visitClasses[s] }}">{{ visitLabels[s] }} {{ d.visits.today[s] }}</span>
+            }
+          </div>
+        </div>
+        @if (d.visits.list.length) {
+          <ul class="divide-y divide-stormy-teal-900">
+            @for (v of d.visits.list; track v.id) {
+              <li>
+                <a [routerLink]="['/visits', v.id]" class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-alabaster-grey-900">
+                  <div>
+                    <p class="font-medium">{{ v.customer.name }}</p>
+                    <p class="text-xs text-stormy-teal">
+                      {{ v.scheduledAt | date: 'h:mm a' }} · {{ v.customer.governorate }}
+                      @if (isManager) {
+                        · {{ v.salesRep.name }}
+                      }
+                    </p>
+                  </div>
+                  <span class="rounded-full px-2 py-0.5 text-xs {{ visitClasses[v.status] }}">{{ visitLabels[v.status] }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="px-4 py-6 text-center text-sm text-stormy-teal">مفيش زيارات النهارده.</p>
+        }
+      </div>
+
+      <!-- Cheques due -->
+      <div class="card p-0">
+        <div class="border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold">شيكات مستحقة خلال 14 يوم</h2>
+        </div>
+        @if (d.cheques.length) {
+          <ul class="divide-y divide-stormy-teal-900">
+            @for (c of d.cheques; track c.id) {
+              <li>
+                <a
+                  [routerLink]="[c.kind === 'INVOICE' ? '/invoices' : '/collections', c.id]"
+                  class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-alabaster-grey-900"
+                >
+                  <div>
+                    <p class="font-medium">{{ c.customer.name }}</p>
+                    <p class="text-xs text-stormy-teal">
+                      شيك {{ c.chequeNumber ?? '—' }} · {{ c.dueDate | date: 'd/M' }}
+                      @if (c.depositStatus === Pending) {
+                        · <span class="text-vibrant-coral-400">مع المندوب</span>
+                      }
+                    </p>
+                  </div>
+                  <div class="text-left">
+                    <p class="font-bold tabular-nums">{{ c.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                    @let days = daysUntil(c.dueDate);
+                    <p class="text-xs" [class]="days <= 2 ? 'font-semibold text-vibrant-coral-400' : 'text-stormy-teal'">
+                      {{ days === 0 ? 'النهارده' : days === 1 ? 'بكرة' : 'بعد ' + days + ' يوم' }}
+                    </p>
+                  </div>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="px-4 py-6 text-center text-sm text-stormy-teal">مفيش شيكات مستحقة قريب.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Reps performance -->
+    @if (d.reps; as reps) {
+      <div class="card overflow-x-auto p-0">
+        <div class="border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold">أداء المناديب هذا الشهر</h2>
+        </div>
+        @if (reps.length) {
+          <table class="w-full text-sm">
+            <thead class="table-head">
+              <tr>
+                <th class="px-4 py-2 text-start">المندوب</th>
+                <th class="px-4 py-2 text-start">المبيعات</th>
+                <th class="px-4 py-2 text-start">المحصّل</th>
+                <th class="px-4 py-2 text-start">زيارات مكتملة</th>
+                <th class="px-4 py-2 text-start">زيارات اليوم</th>
+                <th class="px-4 py-2 text-start">معه لم يُسلَّم</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (r of reps; track r.id) {
+                <tr>
+                  <td class="px-4 py-2 font-medium">{{ r.name }}</td>
+                  <td class="px-4 py-2">
+                    {{ r.sales | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                    <span class="text-xs text-stormy-teal">({{ r.invoices }})</span>
+                  </td>
+                  <td class="px-4 py-2">{{ r.collected | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="px-4 py-2">{{ r.visitsCompleted }}</td>
+                  <td class="px-4 py-2">{{ r.visitsToday }}</td>
+                  <td class="px-4 py-2">
+                    @if (r.cashHeld) {
+                      <a [routerLink]="['/treasury/handover', r.id]" class="font-semibold text-vibrant-coral-400 hover:underline">
+                        {{ r.cashHeld | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                      </a>
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="px-4 py-6 text-center text-sm text-stormy-teal">مفيش مناديب نشطين.</p>
+        }
+      </div>
+    }
+
+    <div class="grid gap-4 lg:grid-cols-2">
+      <!-- Top debtors -->
+      <div class="card p-0">
+        <div class="border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold">أعلى المديونيات</h2>
+        </div>
+        @if (d.customers.topDebtors.length) {
+          <ul class="divide-y divide-stormy-teal-900">
+            @for (c of d.customers.topDebtors; track c.id) {
+              <li>
+                <a [routerLink]="['/customers', c.id]" class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-alabaster-grey-900">
+                  <div>
+                    <p class="font-medium">{{ c.name }}</p>
+                    <p class="text-xs text-stormy-teal">
+                      {{ c.governorate }} · آخر تحصيل {{ c.lastCollection ? (c.lastCollection.date | date: 'd/M/y') : '—' }}
+                    </p>
+                  </div>
+                  <span class="font-bold tabular-nums text-vibrant-coral-400">{{ c.debit | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="px-4 py-6 text-center text-sm text-stormy-teal">مفيش مديونيات.</p>
+        }
+      </div>
+
+      <!-- Recent invoices -->
+      <div class="card p-0">
+        <div class="border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold">آخر الفواتير</h2>
+        </div>
+        @if (d.recentInvoices.length) {
+          <ul class="divide-y divide-stormy-teal-900">
+            @for (i of d.recentInvoices; track i.id) {
+              <li>
+                <a [routerLink]="['/invoices', i.id]" class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-alabaster-grey-900">
+                  <div>
+                    <p class="font-medium">
+                      {{ i.customer.name }}
+                      @if (i.status === 'CANCELLED') {
+                        <span class="text-xs text-vibrant-coral-400">(ملغاة)</span>
+                      }
+                    </p>
+                    <p class="text-xs text-stormy-teal">
+                      #{{ i.invoiceNumber }} · {{ i.createdAt | date: 'd/M h:mm a' }}
+                      @if (isManager) {
+                        · {{ i.createdBy.name }}
+                      }
+                    </p>
+                  </div>
+                  <div class="text-left">
+                    <p class="font-bold tabular-nums" [class.line-through]="i.status === 'CANCELLED'">{{ i.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                    @if (i.remaining > 0 && i.status !== 'CANCELLED') {
+                      <p class="text-xs text-vibrant-coral-400">باقي {{ i.remaining | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                    }
+                  </div>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="px-4 py-6 text-center text-sm text-stormy-teal">مفيش فواتير لسه.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Low stock -->
+    @if (d.stock?.lowStock?.length) {
+      <div class="card p-0">
+        <div class="border-b border-stormy-teal-900 px-4 py-3">
+          <h2 class="font-semibold text-vibrant-coral-400">نواقص المخزون</h2>
+        </div>
+        <ul class="divide-y divide-stormy-teal-900">
+          @for (p of d.stock!.lowStock; track p.id) {
+            <li class="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div>
+                <p class="font-medium">{{ p.name }}</p>
+                <p class="text-xs text-stormy-teal">الموجود {{ p.quantity | number }} · الحد الأدنى {{ p.minQuantity | number }}</p>
+              </div>
+              <a [routerLink]="['/inventory/receive']" [queryParams]="{ productId: p.id }" class="btn-outline">وارد</a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+</section>

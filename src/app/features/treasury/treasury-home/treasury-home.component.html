@@ -1,0 +1,121 @@
+<section class="space-y-6">
+  <h1 class="text-2xl font-bold">{{ isManager ? 'الخزنة' : 'خزنتي' }}</h1>
+
+  @if (isManager) {
+    @if (summary.isLoading() && !summary.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل الخزنة..." />
+    } @else if (summary.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل الخزنة." (retry)="summary.reload()" />
+    } @else if (summary.value(); as s) {
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="card keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 lg:col-span-1">
+          <p class="text-sm text-yale-blue-800">رصيد خزنة الشركة</p>
+          <p class="mt-2 text-3xl font-bold tabular-nums">{{ s.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <ul class="mt-4 space-y-1 border-t border-yale-blue-400 pt-3 text-sm">
+            @for (m of s.byMethod; track m.method) {
+              <li class="flex justify-between gap-3">
+                <span class="text-yale-blue-800">{{ methodLabels[m.method] }} ({{ m.count }})</span>
+                <span class="font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="card p-0 lg:col-span-2">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-stormy-teal-900 px-4 py-3">
+            <h2 class="font-semibold">فلوس مع المناديب (لم تُسلَّم)</h2>
+            <span class="text-sm text-stormy-teal">الإجمالي: <span class="font-bold tabular-nums text-vibrant-coral-400">{{ repsTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span></span>
+          </div>
+          @if (s.pendingByRep.length) {
+            <ul class="divide-y divide-stormy-teal-900">
+              @for (r of s.pendingByRep; track r.rep.id) {
+                <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div>
+                    <p class="font-semibold">{{ r.rep.name }}</p>
+                    <p class="text-xs text-stormy-teal">{{ r.count }} مستند</p>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="font-bold tabular-nums">{{ r.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+                    <a [routerLink]="['/treasury/handover', r.rep.id]" class="btn-primary">استلام</a>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="px-4 py-6 text-center text-sm text-stormy-teal">كل الفلوس المحصّلة اتسلمت للخزنة.</p>
+          }
+        </div>
+      </div>
+    }
+  } @else {
+    @if (pending.isLoading() && !pending.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل خزنتك..." />
+    } @else if (pending.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل خزنتك." (retry)="pending.reload()" />
+    } @else {
+      <div class="card flex flex-wrap items-end justify-between gap-4 keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400">
+        <div>
+          <p class="text-sm text-yale-blue-800">معك لم يُسلَّم للخزنة</p>
+          <p class="mt-2 text-3xl font-bold tabular-nums">{{ pendingTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+        </div>
+        <ul class="space-y-1 text-sm">
+          @for (m of pendingByMethod(); track m.method) {
+            <li class="flex justify-between gap-6">
+              <span class="text-yale-blue-800">{{ methodLabels[m.method] }} ({{ m.count }})</span>
+              <span class="font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      <p class="text-sm text-stormy-teal">المبالغ دي بتتخصم من مديونية العميل لما الإدارة تستلمها منك.</p>
+      @if (pending.value()?.length) {
+        <app-payments-table [payments]="pending.value()!" />
+      } @else {
+        <p class="card text-center text-sm text-stormy-teal">مفيش فلوس معاك حاليًا.</p>
+      }
+    }
+  }
+
+  <!-- Handovers -->
+  <div class="space-y-3">
+    <h2 class="text-lg font-bold">{{ isManager ? 'سجل الاستلام' : 'اللي سلّمته' }}</h2>
+    @if (deposits.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل السجل." (retry)="deposits.reload()" />
+    } @else if (!deposits.value()?.length) {
+      @if (deposits.hasValue()) {
+        <p class="card text-center text-sm text-stormy-teal">لا يوجد استلام بعد.</p>
+      }
+    } @else {
+      <div class="card overflow-x-auto p-0">
+        <table class="w-full text-right text-sm">
+          <thead class="table-head">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">رقم الاستلام</th>
+              <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+              @if (isManager) {
+                <th scope="col" class="px-4 py-3 font-semibold">المندوب</th>
+              }
+              <th scope="col" class="px-4 py-3 font-semibold">استلمها</th>
+              <th scope="col" class="px-4 py-3 font-semibold">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stormy-teal-900">
+            @for (d of deposits.value(); track d.id) {
+              <tr>
+                <td class="px-4 py-3">
+                  <a [routerLink]="['/treasury/deposits', d.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">#{{ d.number }}</a>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3">{{ d.createdAt | date: 'd MMM y, h:mm a' }}</td>
+                @if (isManager) {
+                  <td class="px-4 py-3">{{ d.rep.name }}</td>
+                }
+                <td class="px-4 py-3">{{ d.receivedBy.name }}</td>
+                <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ d.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>
