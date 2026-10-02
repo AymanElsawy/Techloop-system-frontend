@@ -1,0 +1,95 @@
+<section class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3 print:hidden">
+    <a routerLink="/targets" class="text-sm text-stormy-teal hover:underline">→ رجوع</a>
+    <div class="flex gap-2">
+      <button type="button" class="btn-outline" (click)="print(true)" [disabled]="!doc.hasValue()">تصدير PDF</button>
+      <button type="button" class="btn-primary" (click)="print(false)" [disabled]="!doc.hasValue()">طباعة</button>
+    </div>
+  </div>
+  <p class="text-xs text-stormy-teal print:hidden">للـ PDF: اختار "Save as PDF / حفظ كـ PDF" من نافذة الطباعة. المقاس A4.</p>
+
+  @if (doc.isLoading() && !doc.hasValue()) {
+    <app-status-message type="loading" message="جاري تجهيز التقرير..." />
+  } @else if (doc.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل التقرير." (retry)="doc.reload()" />
+  } @else if (doc.value(); as v) {
+    <!-- Same fixed black/white sheet as the documents print view. -->
+    <article
+      class="mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col bg-white p-[12mm] text-[12px] leading-relaxed text-black shadow-lg print:min-h-0 print:max-w-none print:p-0 print:shadow-none"
+    >
+      <header class="flex items-start justify-between gap-6 border-b-2 border-black pb-4">
+        <div>
+          <p class="text-2xl font-bold">{{ v.company.name }}</p>
+          @for (line of companyLines(v.company); track line) {
+            <p class="text-xs text-gray-700"><bdi>{{ line }}</bdi></p>
+          }
+        </div>
+        <div class="text-left">
+          <p class="text-xl font-bold">{{ v.report.title }}</p>
+          <p class="mt-1 font-bold">{{ v.report.subtitle }}</p>
+          <p class="text-xs text-gray-700">{{ v.report.period }}</p>
+        </div>
+      </header>
+
+      <dl class="mt-5 grid grid-cols-2 gap-x-6 gap-y-1 rounded border border-gray-400 p-3 sm:grid-cols-3 print:grid-cols-3">
+        @for (s of v.report.summary; track s[0]; let last = $last) {
+          <div class="flex justify-between gap-3" [class.font-bold]="last">
+            <dt class="text-gray-600">{{ s[0] }}</dt>
+            <dd class="tabular-nums">{{ s[1] }}</dd>
+          </div>
+        }
+      </dl>
+
+      @for (section of v.report.sections; track section.title) {
+        <h2 class="mt-5 mb-1 text-sm font-bold">{{ section.title }}</h2>
+        @if (section.rows.length) {
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-gray-200">
+                @for (c of section.columns; track $index) {
+                  <th class="border border-gray-400 px-1.5 py-1 text-start font-bold">{{ c }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of section.rows; track $index) {
+                <tr class="break-inside-avoid">
+                  @for (cell of row; track $index) {
+                    <td class="border border-gray-400 px-1.5 py-1">{{ cell }}</td>
+                  }
+                </tr>
+              }
+              @if (section.total; as total) {
+                <tr class="bg-gray-100 font-bold">
+                  @for (cell of total; track $index) {
+                    <td class="border border-gray-400 px-1.5 py-1">{{ cell }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="rounded border border-gray-300 p-2 text-gray-600">لا يوجد.</p>
+        }
+      }
+
+      <p class="mt-4 text-[11px] text-gray-600">
+        صافي المبيعات = الفواتير − المرتجعات. التحصيل = المدفوع في الفواتير + التحصيلات، من غير الشيكات المرتدة.
+      </p>
+
+      <div class="mt-auto pt-16">
+        <div class="grid grid-cols-2 gap-16">
+          @for (s of v.report.signatures; track s) {
+            <div class="border-t border-black pt-1 text-center text-sm">{{ s }}</div>
+          }
+        </div>
+        <footer class="mt-8 border-t border-gray-300 pt-2 text-center text-xs text-gray-600">
+          @if (v.company.footer) {
+            <p>{{ v.company.footer }}</p>
+          }
+          <p>{{ v.company.name }} — {{ v.report.title }} — {{ v.report.period }}</p>
+        </footer>
+      </div>
+    </article>
+  }
+</section>

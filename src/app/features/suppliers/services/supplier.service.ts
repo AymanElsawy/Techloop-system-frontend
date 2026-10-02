@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response';
-import { Supplier, SupplierInput } from '../models/supplier.model';
+import { Supplier, SupplierInput, SupplierPayment, SupplierPaymentInput } from '../models/supplier.model';
 
 @Injectable({ providedIn: 'root' })
 export class SupplierService {
@@ -26,5 +26,23 @@ export class SupplierService {
 
   updateSupplier(id: string, data: Partial<SupplierInput & { isActive: boolean }>): Observable<Supplier> {
     return this.http.patch<ApiResponse<Supplier>>(`${this.url}/${id}`, data).pipe(map(({ data }) => data));
+  }
+
+  getPayments(supplierId: string): Observable<SupplierPayment[]> {
+    return this.http
+      .get<ApiResponse<SupplierPayment[]>>(`${this.url}/${supplierId}/payments`)
+      .pipe(map(({ data }) => data));
+  }
+
+  createPayment(supplierId: string, data: SupplierPaymentInput): Observable<SupplierPayment> {
+    return this.http
+      .post<ApiResponse<SupplierPayment>>(`${this.url}/${supplierId}/payments`, data)
+      .pipe(map(({ data }) => data));
+  }
+
+  cancelPayment(paymentId: string, reason: string): Observable<SupplierPayment> {
+    return this.http
+      .post<ApiResponse<SupplierPayment>>(`${this.url}/payments/${paymentId}/cancel`, { reason })
+      .pipe(map(({ data }) => data));
   }
 }

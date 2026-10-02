@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { DatePipe, arabicDigits } from '../../shared/date.pipe';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -52,7 +53,8 @@ interface Dashboard {
   // Managers
   treasury?: { total: number; byMethod: { method: PaymentMethod; total: number; count: number }[]; withReps: number };
   stock?: { products: number; value: number; lowStock: { id: string; name: string; unit: string | null; quantity: number; minQuantity: number }[] };
-  reps?: { id: string; name: string; sales: number; invoices: number; collected: number; visitsCompleted: number; visitsToday: number; cashHeld: number }[];
+  suppliers?: { debt: number; count: number };
+  reps?: { id: string; name: string; sales: number; invoices: number; collected: number; visitsCompleted: number; visitsToday: number; cashHeld: number; salesProgress: number | null; collectionProgress: number | null; commission: number; yearSalesProgress: number | null; yearCollectionProgress: number | null }[];
 }
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA'); // YYYY-MM-DD, local time like the API
@@ -85,7 +87,7 @@ export class DashboardComponent {
     const daily = new Map((this.data.value()?.daily ?? []).map((d) => [d.day, d]));
     const days = Array.from({ length: this.today.getDate() }, (_, i) => {
       const key = dayKey(new Date(this.today.getFullYear(), this.today.getMonth(), i + 1));
-      return { day: i + 1, sales: daily.get(key)?.sales ?? 0, collected: daily.get(key)?.collected ?? 0 };
+      return { day: i + 1, label: arabicDigits(String(i + 1)), sales: daily.get(key)?.sales ?? 0, collected: daily.get(key)?.collected ?? 0 };
     });
     const max = Math.max(1, ...days.flatMap((d) => [d.sales, d.collected]));
     return days.map((d) => ({ ...d, salesPct: (d.sales / max) * 100, collectedPct: (d.collected / max) * 100 }));

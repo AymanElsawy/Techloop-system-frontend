@@ -18,6 +18,9 @@
           <a [routerLink]="['/customers', c.id, 'returns', 'new']" class="btn-outline">فاتورة مرتجع</a>
         }
         <a [routerLink]="['/customers', c.id, 'collections', 'new']" class="btn-accent">فاتورة تحصيل</a>
+        @if (isManager) {
+          <app-share-link resource="customers" [id]="c.id" />
+        }
       </div>
     </div>
 
@@ -66,6 +69,24 @@
         <p class="mt-2 text-xl font-bold" [class.text-soft-apricot-300]="c.pendingPayments > 0">{{ c.pendingPayments | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
         <p class="text-xs text-stormy-teal">مع المندوب، تتخصم عند التسليم</p>
       </div>
+      @if (c.paymentTermDays != null || c.discountPercent || c.overdue) {
+        <div class="card" [class.border-vibrant-coral-400]="(c.overdue ?? 0) > 0">
+          <p class="text-sm text-stormy-teal">متأخرات</p>
+          <p class="mt-2 text-xl font-bold" [class.text-vibrant-coral-400]="(c.overdue ?? 0) > 0">{{ (c.overdue ?? 0) | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="text-xs text-stormy-teal">
+            {{ c.paymentTermDays != null ? 'السداد خلال ' + c.paymentTermDays + ' يوم' : 'بدون مدة سداد' }}{{ c.discountPercent ? ' · خصم ' + c.discountPercent + '%' : '' }}
+          </p>
+        </div>
+      }
+      @if (c.creditLimit != null) {
+        <div class="card" [class.border-vibrant-coral-400]="creditLeft(c)! <= 0">
+          <p class="text-sm text-stormy-teal">حد الائتمان</p>
+          <p class="mt-2 text-xl font-bold">{{ c.creditLimit | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="text-xs" [class]="creditLeft(c)! <= 0 ? 'text-vibrant-coral-400' : 'text-stormy-teal'">
+            {{ creditLeft(c)! <= 0 ? 'وصل للحد: المندوب مش هيقدر يبيع آجل' : 'متاح ' + (creditLeft(c) | currency: 'EGP' : 'symbol' : '1.0-2') }}
+          </p>
+        </div>
+      }
       <div class="card">
         <p class="text-sm text-stormy-teal">دائن</p>
         <p class="mt-2 text-xl font-bold">{{ c.credit | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
@@ -189,6 +210,8 @@
                     </a>
                     @if (line.cancelled) {
                       <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">ملغاة</span>
+                    } @else if (line.bounced) {
+                      <span class="ms-1 whitespace-nowrap rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">شيك مرتد</span>
                     } @else if (line.pending) {
                       <span class="ms-1 whitespace-nowrap rounded-full bg-soft-apricot-800 px-2 py-0.5 text-xs font-medium text-soft-apricot-200">تحت التسليم</span>
                     }

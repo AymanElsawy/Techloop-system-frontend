@@ -1,0 +1,220 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">التقارير</h1>
+    <button type="button" class="btn-primary" [disabled]="exporting()" (click)="export()">
+      {{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}
+    </button>
+  </div>
+
+  <div class="flex flex-wrap gap-2" role="tablist">
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'sales'" [class]="tab() === 'sales' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('sales')">المبيعات والربح</button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'aging'" [class]="tab() === 'aging' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('aging')">أعمار الديون</button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'purchases'" [class]="tab() === 'purchases' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('purchases')">المشتريات</button>
+  </div>
+
+  @if (exportError(); as e) {
+    <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ e }}</p>
+  }
+
+  @if (tab() === 'sales') {
+    <div class="card grid gap-3 sm:grid-cols-3">
+      <div>
+        <label for="group" class="form-label">حسب</label>
+        <select id="group" class="form-input" [value]="groupBy()" (change)="groupBy.set($any($event.target).value)">
+          @for (g of groups; track g) {
+            <option [value]="g">{{ groupLabels[g] }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label for="from" class="form-label">من</label>
+        <input id="from" type="date" class="form-input" [value]="from()" (change)="$any($event.target).value && from.set($any($event.target).value)" />
+      </div>
+      <div>
+        <label for="to" class="form-label">إلى</label>
+        <input id="to" type="date" class="form-input" [value]="to()" (change)="$any($event.target).value && to.set($any($event.target).value)" />
+      </div>
+    </div>
+
+    @if (sales.isLoading() && !sales.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل التقرير..." />
+    } @else if (sales.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل التقرير." (retry)="sales.reload()" />
+    } @else if (sales.value(); as s) {
+      @if (!s.rows.length) {
+        <app-status-message type="empty" message="مفيش مبيعات في الفترة دي." />
+      } @else {
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div class="card"><p class="text-sm text-stormy-teal">صافي المبيعات</p><p class="mt-2 text-xl font-bold">{{ s.totals.net | currency: 'EGP' : 'symbol' : '1.0-2' }}</p><p class="text-xs text-stormy-teal">{{ s.totals.invoices }} فاتورة · مرتجع {{ s.totals.returns | currency: 'EGP' : 'symbol' : '1.0-2' }}</p></div>
+          <div class="card"><p class="text-sm text-stormy-teal">التكلفة</p><p class="mt-2 text-xl font-bold">{{ s.totals.cost | currency: 'EGP' : 'symbol' : '1.0-2' }}</p></div>
+          <div class="card"><p class="text-sm text-stormy-teal">الربح</p><p class="mt-2 text-xl font-bold" [class.text-vibrant-coral-400]="s.totals.profit < 0">{{ s.totals.profit | currency: 'EGP' : 'symbol' : '1.0-2' }}</p></div>
+          <div class="card"><p class="text-sm text-stormy-teal">هامش الربح</p><p class="mt-2 text-xl font-bold">{{ margin(s.totals) === null ? '—' : (margin(s.totals) | percent) }}</p></div>
+        </div>
+
+        <div class="card overflow-x-auto p-0">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">{{ groupLabels[s.groupBy] }}</th>
+                @if (s.groupBy === 'product') {
+                  <th scope="col" class="px-4 py-3 font-semibold">الكمية</th>
+                }
+                <th scope="col" class="px-4 py-3 font-semibold">الفواتير</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المبيعات</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المرتجعات</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الصافي</th>
+                <th scope="col" class="px-4 py-3 font-semibold">التكلفة</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الربح</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الهامش</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (r of s.rows; track r.id) {
+                <tr>
+                  <td class="px-4 py-3 font-semibold">
+                    {{ r.name }}
+                    @if (r.costMissing) {
+                      <span class="text-vibrant-coral-400" title="فيه مبيعات من غير سعر شراء، تكلفتها محسوبة صفر">*</span>
+                    }
+                  </td>
+                  @if (s.groupBy === 'product') {
+                    <td class="px-4 py-3 tabular-nums">{{ r.quantity | number }}</td>
+                  }
+                  <td class="px-4 py-3 tabular-nums">{{ r.invoices }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">{{ r.sales | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">{{ r.returns ? (r.returns | currency: 'EGP' : 'symbol' : '1.0-2') : '—' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ r.net | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">{{ r.cost | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold" [class.text-vibrant-coral-400]="r.profit < 0">{{ r.profit | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">{{ margin(r) === null ? '—' : (margin(r) | percent) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-stormy-teal">
+          الربح = صافي المبيعات − التكلفة (متوسط سعر الشراء وقت البيع). المرتجعات بتتحسب على المندوب اللي باع.
+          @if (hasMissingCost(s.rows)) {
+            <span class="text-vibrant-coral-400">* فيه أصناف اتباعت من غير سعر شراء، فتكلفتها محسوبة صفر.</span>
+          }
+        </p>
+      }
+    }
+  } @else if (tab() === 'aging') {
+    @if (aging.isLoading() && !aging.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل التقرير..." />
+    } @else if (aging.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل التقرير." (retry)="aging.reload()" />
+    } @else if (aging.value(); as a) {
+      @if (!a.rows.length) {
+        <app-status-message type="empty" message="مفيش مديونيات على العملاء." />
+      } @else {
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
+          <div class="card"><p class="text-sm text-stormy-teal">إجمالي المديونية</p><p class="mt-2 text-xl font-bold">{{ a.totals.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</p><p class="text-xs text-stormy-teal">{{ a.rows.length }} عميل</p></div>
+          @for (b of a.buckets; track b; let i = $index) {
+            <div class="card" [class.border-vibrant-coral-400]="i === last(a.buckets) && a.totals.buckets[i] > 0">
+              <p class="text-sm text-stormy-teal">{{ bucketLabel(b, i) }}</p>
+              <p class="mt-2 text-xl font-bold" [class.text-vibrant-coral-400]="i === last(a.buckets) && a.totals.buckets[i] > 0">{{ a.totals.buckets[i] | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+            </div>
+          }
+        </div>
+
+        <div class="card overflow-x-auto p-0">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">العميل</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المديونية</th>
+                @for (b of a.buckets; track b) {
+                  <th scope="col" class="whitespace-nowrap px-4 py-3 font-semibold">{{ bucketLabel(b, $index) }}</th>
+                }
+                <th scope="col" class="px-4 py-3 font-semibold">أقدم تأخير</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (r of a.rows; track r.customer.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    <a [routerLink]="['/customers', r.customer.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">{{ r.customer.name }}</a>
+                    <p class="text-xs text-stormy-teal">{{ r.customer.governorate }}{{ r.pending ? ' · تحت التسليم ' + (r.pending | number: '1.0-2') : '' }}</p>
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ r.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  @for (v of r.buckets; track $index; let i = $index) {
+                    <td class="whitespace-nowrap px-4 py-3" [class.text-vibrant-coral-400]="i === last(a.buckets) && v > 0">{{ v ? (v | currency: 'EGP' : 'symbol' : '1.0-2') : '—' }}</td>
+                  }
+                  <td class="whitespace-nowrap px-4 py-3">{{ r.oldestDays < 0 ? 'لم يستحق' : r.oldestDays + ' يوم' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-stormy-teal">المدفوع بيسدّد أقدم فاتورة الأول، فالمديونية الباقية بتتوزع على أحدث الفواتير. التأخير بيتحسب من ميعاد الاستحقاق (مدة سداد العميل)، والعميل اللي ملوش مدة سداد من تاريخ الفاتورة.</p>
+      }
+    }
+  } @else {
+    <div class="card grid gap-3 sm:grid-cols-3">
+      <div>
+        <label for="p-search" class="form-label">بحث</label>
+        <input id="p-search" class="form-input" placeholder="الصنف أو المورد" [value]="search()" (input)="search.set($any($event.target).value)" />
+      </div>
+      <div>
+        <label for="p-from" class="form-label">من</label>
+        <input id="p-from" type="date" class="form-input" [value]="pFrom()" (change)="pFrom.set($any($event.target).value)" />
+      </div>
+      <div>
+        <label for="p-to" class="form-label">إلى</label>
+        <input id="p-to" type="date" class="form-input" [value]="pTo()" (change)="pTo.set($any($event.target).value)" />
+      </div>
+    </div>
+
+    @if (purchases.isLoading() && !purchases.hasValue()) {
+      <app-status-message type="loading" message="جاري تحميل التقرير..." />
+    } @else if (purchases.error()) {
+      <app-status-message type="error" message="حدث خطأ أثناء تحميل التقرير." (retry)="purchases.reload()" />
+    } @else if (!purchaseRows().length) {
+      <app-status-message type="empty" message="مفيش مشتريات مطابقة." />
+    } @else {
+      <div class="card overflow-x-auto p-0">
+        <table class="w-full text-right text-sm">
+          <thead class="table-head">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">الصنف</th>
+              <th scope="col" class="px-4 py-3 font-semibold">المورد</th>
+              <th scope="col" class="px-4 py-3 font-semibold">مرات الشراء</th>
+              <th scope="col" class="px-4 py-3 font-semibold">الكمية</th>
+              <th scope="col" class="px-4 py-3 font-semibold">متوسط السعر</th>
+              <th scope="col" class="px-4 py-3 font-semibold">أقل / أعلى</th>
+              <th scope="col" class="px-4 py-3 font-semibold">آخر سعر</th>
+              <th scope="col" class="px-4 py-3 font-semibold">الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stormy-teal-900">
+            @for (r of purchaseRows(); track r.product.id + r.supplier.id; let i = $index) {
+              <tr>
+                <td class="px-4 py-3">
+                  @if (i === 0 || purchaseRows()[i - 1].product.id !== r.product.id) {
+                    <span class="font-semibold">{{ r.product.name }}</span>
+                    @if (r.currentAvgCost != null) {
+                      <p class="text-xs text-stormy-teal">متوسط الصنف الحالي {{ r.currentAvgCost | number: '1.0-2' }}</p>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-3">{{ r.supplier.name }}</td>
+                <td class="px-4 py-3 tabular-nums">{{ r.receipts }}</td>
+                <td class="px-4 py-3 tabular-nums">{{ r.quantity | number }}</td>
+                <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ r.avgCost | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                <td class="whitespace-nowrap px-4 py-3 tabular-nums">{{ r.minCost | number: '1.0-2' }} / {{ r.maxCost | number: '1.0-2' }}</td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  {{ r.lastCost | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  <p class="text-xs text-stormy-teal">{{ r.lastAt | date: 'd MMM y' }}</p>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3">{{ r.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-stormy-teal">لكل صنف: كل مورد اشتريت منه وبكام، والأرخص في المتوسط الأول. الصنف واحد مهما اختلف المورد، ومتوسط سعره بيتحسب من كل المشتريات.</p>
+    }
+  }
+</section>

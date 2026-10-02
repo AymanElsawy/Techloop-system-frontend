@@ -1,9 +1,19 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
 
 import { UserRole } from './core/auth/auth.models';
+import { AuthService } from './core/auth/auth.service';
 import { authGuard, guestGuard } from './core/auth/auth.guard';
-import { roleGuard } from './core/auth/role.guard';
+import { roleGuard, roleGuardTo } from './core/auth/role.guard';
 import { AdminLayoutComponent } from './layout/admin-layout/admin-layout.component';
+
+const NOT_WAREHOUSE_REP = [UserRole.OWNER, UserRole.ADMIN, UserRole.SALES_REP];
+
+/** A sales rep sees custody papers as data only: their print view sends them to the movement details. */
+const noCustodyPrintForRep: CanActivateFn = (route) =>
+  !['ISSUE', 'RETURN', 'PURCHASE'].includes(route.params['type']) ||
+  !inject(AuthService).hasRole(UserRole.SALES_REP) ||
+  inject(Router).createUrlTree(['/inventory/movements', route.params['id']]);
 
 export const routes: Routes = [
   {
@@ -21,6 +31,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         title: 'الرئيسية',
+        canActivate: [roleGuardTo('/inventory', ...NOT_WAREHOUSE_REP)],
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
@@ -110,9 +121,17 @@ export const routes: Routes = [
           import('./features/inventory/movement-list/movement-list.component').then((m) => m.MovementListComponent),
       },
       {
+        path: 'inventory/movements/:id',
+        title: 'تفاصيل الحركة',
+        loadComponent: () =>
+          import('./features/inventory/movement-details/movement-details.component').then(
+            (m) => m.MovementDetailsComponent,
+          ),
+      },
+      {
         path: 'inventory/warehouses/:id',
         title: 'المخزن',
-        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN, UserRole.WAREHOUSE_REP)],
         loadComponent: () =>
           import('./features/inventory/warehouse-details/warehouse-details.component').then(
             (m) => m.WarehouseDetailsComponent,
@@ -121,11 +140,18 @@ export const routes: Routes = [
       {
         path: 'inventory/warehouses/:id/move',
         title: 'حركة مخزن',
-        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN, UserRole.WAREHOUSE_REP)],
         loadComponent: () =>
           import('./features/inventory/stock-move-form/stock-move-form.component').then(
             (m) => m.StockMoveFormComponent,
           ),
+      },
+      {
+        path: 'inventory/warehouses/:id/count',
+        title: 'جرد المخزن',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () =>
+          import('./features/inventory/stock-count/stock-count.component').then((m) => m.StockCountComponent),
       },
       {
         path: 'inventory/products',
@@ -139,6 +165,15 @@ export const routes: Routes = [
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () =>
           import('./features/products/product-form/product-form.component').then((m) => m.ProductFormComponent),
+      },
+      {
+        path: 'inventory/products/:id',
+        title: 'مشتريات الصنف',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () =>
+          import('./features/products/product-purchases/product-purchases.component').then(
+            (m) => m.ProductPurchasesComponent,
+          ),
       },
       {
         path: 'inventory/products/:id/edit',
@@ -188,6 +223,7 @@ export const routes: Routes = [
       {
         path: 'documents',
         title: 'الفواتير',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () =>
           import('./features/documents/document-list/document-list.component').then((m) => m.DocumentListComponent),
       },
@@ -201,6 +237,7 @@ export const routes: Routes = [
       {
         path: 'documents/:type/:id',
         title: 'طباعة مستند',
+        canActivate: [noCustodyPrintForRep],
         loadComponent: () =>
           import('./features/documents/document-print/document-print.component').then((m) => m.DocumentPrintComponent),
       },
@@ -226,10 +263,34 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'notifications',
+        title: 'الإشعارات',
+        loadComponent: () =>
+          import('./features/notifications/notification-list.component').then((m) => m.NotificationListComponent),
+      },
+      {
         path: 'users',
         title: 'المستخدمون',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () => import('./features/users/user-list.component').then((m) => m.UserListComponent),
+      },
+      {
+        path: 'reports',
+        title: 'التقارير',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+      {
+        path: 'targets',
+        title: 'التارجت والعمولات',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () => import('./features/users/targets.component').then((m) => m.TargetsComponent),
+      },
+      {
+        path: 'targets/print',
+        title: 'طباعة تقرير التارجت',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () => import('./features/users/targets-print.component').then((m) => m.TargetsPrintComponent),
       },
       {
         path: 'users/new',

@@ -27,4 +27,8 @@ export class ProductService {
   updateProduct(id: string, data: Partial<ProductInput>): Observable<Product> {
     return this.http.patch<ApiResponse<Product>>(`${this.url}/${id}`, data).pipe(map(({ data }) => data));
   }
+
+  deleteProduct(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`);
+  }
 }

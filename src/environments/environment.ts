@@ -1,4 +1,4 @@
 export const environment = {
   // Production: set to the deployed backend URL.
-  apiUrl: '/api',
+  apiUrl: 'https://modem-riverside-wisconsin-province.trycloudflare.com/api',
 };

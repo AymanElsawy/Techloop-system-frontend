@@ -80,6 +80,13 @@
           </p>
         </a>
       }
+      @if (d.suppliers; as s) {
+        <a routerLink="/suppliers" class="card transition hover:border-stormy-teal">
+          <p class="text-sm text-stormy-teal">مديونية الموردين</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums" [class.text-vibrant-coral-400]="s.debt > 0">{{ s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="mt-1 text-xs text-stormy-teal">{{ s.count }} مورد مدين له</p>
+        </a>
+      }
       @if (d.cashBox; as c) {
         <a routerLink="/treasury" class="card keep-colors col-span-2 bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95 lg:col-span-1">
           <p class="text-sm text-yale-blue-800">خزنتي (لم تُسلَّم)</p>
@@ -118,20 +125,20 @@
         <h2 class="font-semibold">حركة الشهر يوم بيوم</h2>
         <div class="flex gap-4 text-xs text-stormy-teal">
           <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-yale-blue"></span> مبيعات</span>
-          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-orange"></span> تحصيل</span>
+          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-prussian-blue-700"></span> تحصيل</span>
         </div>
       </div>
       <div class="flex h-40 items-end gap-1" dir="ltr">
         @for (day of chart(); track day.day) {
           <div
             class="group flex h-full flex-1 flex-col justify-end"
-            [title]="'يوم ' + day.day + ' — مبيعات ' + (day.sales | number: '1.0-2') + ' · تحصيل ' + (day.collected | number: '1.0-2')"
+            [title]="'يوم ' + day.label + ' — مبيعات ' + (day.sales | number: '1.0-2') + ' · تحصيل ' + (day.collected | number: '1.0-2')"
           >
             <div class="flex h-full items-end justify-center gap-px">
               <div class="w-1/2 max-w-3 rounded-t-sm bg-yale-blue group-hover:opacity-80" [style.height.%]="day.salesPct"></div>
-              <div class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-orange group-hover:opacity-80" [style.height.%]="day.collectedPct"></div>
+              <div class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-prussian-blue-700 group-hover:opacity-80" [style.height.%]="day.collectedPct"></div>
             </div>
-            <span class="mt-1 text-center text-[10px] text-stormy-teal">{{ day.day }}</span>
+            <span class="mt-1 text-center text-[10px] text-stormy-teal">{{ day.label }}</span>
           </div>
         }
       </div>
@@ -214,8 +221,9 @@
     <!-- Reps performance -->
     @if (d.reps; as reps) {
       <div class="card overflow-x-auto p-0">
-        <div class="border-b border-stormy-teal-900 px-4 py-3">
+        <div class="flex items-center justify-between border-b border-stormy-teal-900 px-4 py-3">
           <h2 class="font-semibold">أداء المناديب هذا الشهر</h2>
+          <a routerLink="/targets" class="text-sm font-medium text-vibrant-coral-400 hover:underline">التارجت والعمولات</a>
         </div>
         @if (reps.length) {
           <table class="w-full text-sm">
@@ -224,6 +232,8 @@
                 <th class="px-4 py-2 text-start">المندوب</th>
                 <th class="px-4 py-2 text-start">المبيعات</th>
                 <th class="px-4 py-2 text-start">المحصّل</th>
+                <th class="px-4 py-2 text-start">إنجاز التارجت</th>
+                <th class="px-4 py-2 text-start">العمولة</th>
                 <th class="px-4 py-2 text-start">زيارات مكتملة</th>
                 <th class="px-4 py-2 text-start">زيارات اليوم</th>
                 <th class="px-4 py-2 text-start">معه لم يُسلَّم</th>
@@ -238,6 +248,24 @@
                     <span class="text-xs text-stormy-teal">({{ r.invoices }})</span>
                   </td>
                   <td class="px-4 py-2">{{ r.collected | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="px-4 py-2 text-xs">
+                    @if (r.salesProgress === null && r.collectionProgress === null && r.yearSalesProgress === null && r.yearCollectionProgress === null) {
+                      <span class="text-stormy-teal">—</span>
+                    }
+                    @if (r.salesProgress !== null) {
+                      <p>مبيعات <span class="font-semibold tabular-nums" [class.text-vibrant-coral-400]="r.salesProgress < 50">{{ r.salesProgress }}%</span></p>
+                    }
+                    @if (r.collectionProgress !== null) {
+                      <p>تحصيل <span class="font-semibold tabular-nums" [class.text-vibrant-coral-400]="r.collectionProgress < 50">{{ r.collectionProgress }}%</span></p>
+                    }
+                    @if (r.yearSalesProgress !== null) {
+                      <p>مبيعات السنة <span class="font-semibold tabular-nums">{{ r.yearSalesProgress }}%</span></p>
+                    }
+                    @if (r.yearCollectionProgress !== null) {
+                      <p>تحصيل السنة <span class="font-semibold tabular-nums">{{ r.yearCollectionProgress }}%</span></p>
+                    }
+                  </td>
+                  <td class="px-4 py-2">{{ r.commission | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
                   <td class="px-4 py-2">{{ r.visitsCompleted }}</td>
                   <td class="px-4 py-2">{{ r.visitsToday }}</td>
                   <td class="px-4 py-2">

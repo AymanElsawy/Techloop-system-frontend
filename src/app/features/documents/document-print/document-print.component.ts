@@ -1,5 +1,6 @@
 import { Component, LOCALE_ID, computed, inject, input } from '@angular/core';
 import { formatCurrency, formatDate, formatNumber } from '@angular/common';
+import { arabicDigits } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, forkJoin, map } from 'rxjs';
@@ -78,8 +79,8 @@ export class DocumentPrintComponent {
 
   private money = (n: number) => formatCurrency(n, this.locale, 'ج.م.', 'EGP', '1.0-2');
   private num = (n: number) => formatNumber(n, this.locale, '1.0-2');
-  private date = (d: string) => formatDate(d, 'd/M/y h:mm a', this.locale);
-  private day = (d: string) => formatDate(d, 'd/M/y', this.locale);
+  private date = (d: string) => arabicDigits(formatDate(d, 'd/M/y h:mm a', this.locale));
+  private day = (d: string) => arabicDigits(formatDate(d, 'd/M/y', this.locale));
 
   private payment(method: PaymentMethod | null, chequeNumber: string | null, due: string | null): [string, string][] {
     const rows: [string, string][] = [['طريقة الدفع', method ? PAYMENT_METHOD_LABELS[method] : DEFERRED_LABEL]];
@@ -107,17 +108,22 @@ export class DocumentPrintComponent {
               ['المندوب / البائع', i.createdBy?.name ?? '—'],
               ['المخزن', i.warehouse?.name ?? '—'],
               ...this.payment(i.paymentMethod, i.chequeNumber, i.chequeDueDate),
+              ...(i.dueDate ? [['تاريخ استحقاق الباقي', this.day(i.dueDate)] as [string, string]] : []),
             ],
-            columns: ['#', 'الصنف', 'الوحدة', 'الكمية', 'سعر الوحدة', 'الإجمالي'],
+            columns: i.discount
+              ? ['#', 'الصنف', 'الوحدة', 'الكمية', 'سعر البيع', 'الخصم', 'الإجمالي']
+              : ['#', 'الصنف', 'الوحدة', 'الكمية', 'سعر البيع', 'الإجمالي'],
             rows: i.items.map((it, n) => [
               String(n + 1),
               it.name,
               it.unit ? PRODUCT_UNIT_LABELS[it.unit] : '—',
               this.num(it.quantity),
               this.money(it.unitPrice),
+              ...(i.discount ? [it.discountPercent ? `${it.discountPercent}%` : '—'] : []),
               this.money(it.total),
             ]),
             totals: [
+              ...(i.discount ? [['إجمالي الخصم', this.money(i.discount)] as [string, string]] : []),
               ['إجمالي الفاتورة', this.money(i.total)],
               ['المدفوع', this.money(i.paidAmount)],
               ...(i.previousDebtPaid ? [['منه سداد مديونية سابقة', this.money(i.previousDebtPaid)] as [string, string]] : []),
@@ -143,7 +149,7 @@ export class DocumentPrintComponent {
               ['سجّله', r.createdBy?.name ?? '—'],
               ['البضاعة رجعت', r.rep ? `عهدة ${r.rep.name}` : `مخزن ${r.warehouse.name}`],
             ],
-            columns: ['#', 'الصنف', 'الوحدة', 'الكمية', 'سعر الوحدة', 'الإجمالي'],
+            columns: ['#', 'الصنف', 'الوحدة', 'الكمية', 'سعر البيع', 'الإجمالي'],
             rows: r.items.map((it, n) => [
               String(n + 1),
               it.name,
@@ -186,13 +192,23 @@ export class DocumentPrintComponent {
             party: { label: 'المندوب المورِّد', lines: [d.rep.name] },
             meta: [['المستلم (الخزنة)', d.receivedBy.name]],
             columns: ['#', 'المستند', 'العميل', 'طريقة الدفع', 'المبلغ'],
-            rows: d.payments.map((p, n) => [
-              String(n + 1),
-              `${p.kind === 'INVOICE' ? 'فاتورة' : 'إيصال'} ${p.number}`,
-              p.customer.name,
-              PAYMENT_METHOD_LABELS[p.paymentMethod] + (p.chequeNumber ? ` (${p.chequeNumber})` : ''),
-              this.money(p.amount),
-            ]),
+            rows: [
+              ...d.payments.map((p, n) => [
+                String(n + 1),
+                `${p.kind === 'INVOICE' ? 'فاتورة' : 'إيصال'} ${p.number}`,
+                p.customer.name,
+                PAYMENT_METHOD_LABELS[p.paymentMethod] + (p.chequeNumber ? ` (${p.chequeNumber})` : ''),
+                this.money(p.amount),
+              ]),
+              // The rep's expenses accepted in this handover come out of the cash.
+              ...(d.expenses ?? []).map((e, n) => [
+                String(d.payments.length + n + 1),
+                `مصروف #${e.number}`,
+                e.category ?? '—',
+                'نقدي',
+                `− ${this.money(e.amount)}`,
+              ]),
+            ],
             totals: [['إجمالي المبلغ المورَّد', this.money(d.total)]],
             notes: d.notes,
             signatures: ['توقيع المندوب', 'توقيع المستلم'],
@@ -204,7 +220,9 @@ export class DocumentPrintComponent {
             const purchase = type === DocumentType.PURCHASE;
             const supplier = m.supplier as (typeof m.supplier & { phone?: string | null; company?: string | null; address?: string | null }) | null;
             const qty = m.items.reduce((s, i) => s + i.quantity, 0);
-            const total = m.items.reduce((s, i) => s + i.quantity * (i.unitCost ?? 0), 0);
+            const total = m.totalCost ?? m.items.reduce((s, i) => s + i.quantity * (i.unitCost ?? 0), 0);
+            const paid = m.paidAmount ?? total;
+            const remaining = Math.round((total - paid) * 100) / 100;
             return {
               title,
               number: String(m.number ?? '—'),
@@ -224,7 +242,12 @@ export class DocumentPrintComponent {
                   : [String(n + 1), it.name, this.num(it.quantity)],
               ),
               totals: purchase
-                ? [['إجمالي الكمية', this.num(qty)], ['إجمالي الفاتورة', this.money(total)]]
+                ? [
+                    ['إجمالي الكمية', this.num(qty)],
+                    ['إجمالي الفاتورة', this.money(total)],
+                    ['المدفوع', this.money(paid)],
+                    ['المتبقي (مديونية للمورد)', this.money(remaining)],
+                  ]
                 : [['إجمالي الكمية', this.num(qty)]],
               notes: m.notes,
               signatures: purchase ? ['توقيع المورد', 'توقيع أمين المخزن'] : ['توقيع المندوب', 'توقيع أمين المخزن'],

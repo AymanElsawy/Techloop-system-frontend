@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
@@ -28,7 +28,7 @@ import { InventoryService } from '../../inventory/services/inventory.service';
 /** New invoice for a customer: /customers/:id/invoices/new */
 @Component({
   selector: 'app-invoice-form',
-  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink],
+  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './invoice-form.component.html',
 })
 export class InvoiceFormComponent {
@@ -102,7 +102,7 @@ export class InvoiceFormComponent {
   /** Rep not attached to any warehouse: selling is blocked by the backend. */
   protected readonly noWarehouse = computed(() => !this.isManager && this.stock.hasValue() && !this.stock.value()!.warehouseName);
 
-  /** Price comes from the product; the backend recomputes it anyway. */
+  /** Empty price = the product's sale price; the seller may type any price. */
   protected readonly lines = computed(() =>
     (this.value().items ?? []).map((item) => {
       const product = item.productId ? this.productById().get(item.productId) : undefined;
@@ -110,9 +110,18 @@ export class InvoiceFormComponent {
       const stock = this.stock.value();
       const custody = (product && stock?.custody.get(product.id)) || 0;
       const warehouse = (product && stock?.warehouse.get(product.id)) || 0;
+      const discount = item.discountPercent === null || item.discountPercent === undefined || (item.discountPercent as unknown) === ''
+        ? this.customerDiscount()
+        : Number(item.discountPercent);
+      const price = item.unitPrice === null || item.unitPrice === undefined || (item.unitPrice as unknown) === ''
+        ? (product?.price ?? 0)
+        : Number(item.unitPrice);
       return {
         product,
-        total: product ? round2(product.price * quantity) : 0,
+        discount,
+        price,
+        gross: product ? round2(price * quantity) : 0,
+        total: product ? round2(price * quantity * (1 - discount / 100)) : 0,
         custody,
         warehouse,
         fromCustody: Math.min(custody, quantity),
@@ -121,6 +130,18 @@ export class InvoiceFormComponent {
       };
     }),
   );
+  /** The customer's default discount; a rep can't give more (the backend checks too). */
+  protected readonly customerDiscount = computed(() => this.customer.value()?.discountPercent ?? 0);
+  protected readonly maxDiscount = computed(() => (this.isManager ? 100 : this.customerDiscount()));
+  protected readonly canDiscount = computed(() => this.isManager || this.customerDiscount() > 0);
+  protected readonly discountTooHigh = computed(() => this.lines().some((l) => l.discount > this.maxDiscount()));
+  protected readonly discountTotal = computed(() => round2(this.lines().reduce((s, l) => s + l.gross - l.total, 0)));
+  /** From the customer's payment terms; null = no terms. */
+  protected readonly dueDate = computed(() => {
+    const days = this.customer.value()?.paymentTermDays;
+    return days == null ? null : new Date(Date.now() + days * 86_400_000);
+  });
+  protected readonly overdue = computed(() => this.customer.value()?.overdue ?? 0);
   protected readonly hasOverStock = computed(() => this.lines().some((l) => l.overStock));
   protected readonly total = computed(() => round2(this.lines().reduce((sum, l) => sum + l.total, 0)));
   protected readonly paid = computed(() => Number(this.value().paidAmount) || 0);
@@ -135,6 +156,11 @@ export class InvoiceFormComponent {
   protected readonly remaining = computed(() => round2(Math.max(this.total() - this.paid(), 0)));
   protected readonly previousDebtPaid = computed(() => round2(Math.max(this.paid() - this.total(), 0)));
   protected readonly debtAfter = computed(() => round2(this.previousDebt() + this.total() - this.paid()));
+  /** Over the customer's credit limit: blocks a rep (same rule as the backend), only warns a manager. */
+  protected readonly overLimit = computed(() => {
+    const limit = this.customer.value()?.creditLimit;
+    return limit != null && this.debtAfter() > limit && this.debtAfter() > this.previousDebt() ? limit : null;
+  });
   protected readonly isCheque = computed(() => this.paid() > 0 && this.value().paymentMethod === PaymentMethod.CHEQUE);
 
   protected readonly paymentError = computed(() => {
@@ -144,6 +170,13 @@ export class InvoiceFormComponent {
         : 'المبلغ المدفوع أكبر من إجمالي الفاتورة.';
     }
     if (this.paid() > 0 && !this.value().paymentMethod) return 'اختر طريقة السداد.';
+    if (this.discountTooHigh()) return `الخصم أكبر من المسموح (${this.maxDiscount()}%).`;
+    if (this.overdue() > 0 && !this.isManager && this.debtAfter() > this.previousDebt()) {
+      return `العميل عليه متأخرات (${this.overdue()} ج.م). اتحصّلها الأول، أو خلي الفاتورة مدفوعة بالكامل.`;
+    }
+    if (this.overLimit() != null && !this.isManager) {
+      return `المديونية بعد الفاتورة أكبر من حد الائتمان (${this.overLimit()} ج.م). زوّد المدفوع أو قلّل الكمية.`;
+    }
     return null;
   });
 
@@ -162,6 +195,10 @@ export class InvoiceFormComponent {
     return this.fb.group({
       productId: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]],
+      /** null = the product's sale price. */
+      unitPrice: [null as number | null, Validators.min(0)],
+      /** null = the customer's discount. */
+      discountPercent: [null as number | null, [Validators.min(0), Validators.max(100)]],
     });
   }
 
@@ -204,7 +241,12 @@ export class InvoiceFormComponent {
           customerId: this.id(),
           visitId: this.visitId() ?? null,
           warehouseId: this.isManager ? v.warehouseId : null,
-          items: v.items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) })),
+          items: v.items.map((i) => ({
+            productId: i.productId,
+            quantity: Number(i.quantity),
+            ...(i.unitPrice !== null && (i.unitPrice as unknown) !== '' && { unitPrice: Number(i.unitPrice) }),
+            ...(i.discountPercent !== null && (i.discountPercent as unknown) !== '' && { discountPercent: Number(i.discountPercent) }),
+          })),
           paidAmount: paid,
           paymentMethod: paid > 0 ? (v.paymentMethod as PaymentMethod) : null,
           chequeNumber: this.isCheque() ? v.chequeNumber.trim() || null : null,
@@ -234,7 +276,13 @@ export class InvoiceFormComponent {
       this.error.set(
         err instanceof HttpErrorResponse && err.status === 409
           ? 'رقم الفاتورة مستخدم من قبل.'
-          : err instanceof HttpErrorResponse && err.status === 400 && /previous debt/.test(err.error?.message ?? '')
+          : err instanceof HttpErrorResponse && err.status === 400 && /overdue/.test(err.error?.message ?? '')
+            ? 'العميل عليه متأخرات. حدّث الصفحة.'
+            : err instanceof HttpErrorResponse && err.status === 400 && /Discount above/.test(err.error?.message ?? '')
+            ? 'الخصم أكبر من المسموح.'
+            : err instanceof HttpErrorResponse && err.status === 400 && /Credit limit/.test(err.error?.message ?? '')
+            ? 'المديونية بعد الفاتورة أكبر من حد الائتمان. المديونية تغيرت، حدّث الصفحة وحاول مرة أخرى.'
+            : err instanceof HttpErrorResponse && err.status === 400 && /previous debt/.test(err.error?.message ?? '')
             ? 'المبلغ المدفوع أكبر من المسموح. المديونية تغيرت، حدّث الصفحة وحاول مرة أخرى.'
             : httpErrorMessage(err, 'تعذر حفظ الفاتورة. حاول مرة أخرى.'),
       );

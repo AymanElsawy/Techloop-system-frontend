@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, linkedSignal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
@@ -25,9 +25,11 @@ export class MovementListComponent {
   readonly repId = input<string>();
 
   protected readonly isManager = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
+  /** Custody papers are printed by the warehouse side; a sales rep only sees the data. */
+  protected readonly canPrint = !inject(AuthService).hasRole(UserRole.SALES_REP);
   protected readonly types = Object.values(MovementType);
   /** Movement types that are printable documents of their own; sales print their invoice. */
-  protected readonly printType: Partial<Record<MovementType, string>> = {
+  protected readonly printType: Partial<Record<MovementType, string>> = !this.canPrint ? {} : {
     [MovementType.RECEIVE]: 'PURCHASE',
     [MovementType.ISSUE]: 'ISSUE',
     [MovementType.RETURN]: 'RETURN',

@@ -71,6 +71,7 @@
             <th scope="col" class="px-4 py-3 font-semibold">الهاتف</th>
             <th scope="col" class="px-4 py-3 font-semibold">مرات التوريد</th>
             <th scope="col" class="px-4 py-3 font-semibold">إجمالي المشتريات</th>
+            <th scope="col" class="px-4 py-3 font-semibold">المديونية</th>
             <th scope="col" class="px-4 py-3 font-semibold">آخر توريد</th>
           </tr>
         </thead>
@@ -89,6 +90,7 @@
               <td class="px-4 py-3 text-right" dir="ltr">{{ s.phone ?? '—' }}</td>
               <td class="px-4 py-3">{{ s.receipts }}</td>
               <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ s.totalPurchases | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold" [class.text-vibrant-coral-400]="s.debt > 0">{{ s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
               <td class="whitespace-nowrap px-4 py-3">{{ s.lastPurchaseAt ? (s.lastPurchaseAt | date: 'd MMM y') : '—' }}</td>
             </tr>
           }

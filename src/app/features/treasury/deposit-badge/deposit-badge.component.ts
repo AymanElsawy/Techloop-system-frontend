@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { DepositInfo, DepositStatus } from '../models/treasury.model';
+import { ChequeStatus, DepositInfo, DepositStatus } from '../models/treasury.model';
 
 /** Where the money of an invoice / collection is: with the rep, or in the treasury. */
 @Component({
@@ -17,9 +17,15 @@ import { DepositInfo, DepositStatus } from '../models/treasury.model';
     } @else {
       <span class="rounded-full bg-yale-blue-900 px-3 py-1 text-sm font-medium text-yale-blue-600">في الخزنة</span>
     }
+    @if (entry().chequeStatus === ChequeStatus.BOUNCED) {
+      <span class="rounded-full bg-vibrant-coral-900 px-3 py-1 text-sm font-medium text-vibrant-coral-300">شيك مرتد (رجع على مديونية العميل)</span>
+    } @else if (entry().chequeStatus === ChequeStatus.CLEARED) {
+      <span class="rounded-full bg-yale-blue-900 px-3 py-1 text-sm font-medium text-yale-blue-600">الشيك اتصرف</span>
+    }
   `,
 })
 export class DepositBadgeComponent {
-  readonly entry = input.required<Pick<DepositInfo, 'depositStatus' | 'deposit'>>();
+  readonly entry = input.required<Pick<DepositInfo, 'depositStatus' | 'deposit' | 'chequeStatus'>>();
   protected readonly DepositStatus = DepositStatus;
+  protected readonly ChequeStatus = ChequeStatus;
 }

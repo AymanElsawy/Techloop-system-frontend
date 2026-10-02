@@ -9,3 +9,9 @@ export const roleGuard =
   (...roles: UserRole[]): CanActivateFn =>
   () =>
     inject(AuthService).hasRole(...roles) || inject(Router).createUrlTree(['/dashboard']);
+
+/** Like roleGuard, but redirects failures to `redirectTo` instead of `/dashboard` (for roles with no dashboard). */
+export const roleGuardTo =
+  (redirectTo: string, ...roles: UserRole[]): CanActivateFn =>
+  () =>
+    inject(AuthService).hasRole(...roles) || inject(Router).createUrlTree([redirectTo]);

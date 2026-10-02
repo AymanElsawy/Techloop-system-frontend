@@ -1,4 +1,4 @@
-import type { DepositInfo, DepositStatus } from '../../treasury/models/treasury.model';
+import type { ChequeStatus, DepositInfo, DepositStatus } from '../../treasury/models/treasury.model';
 import { PersonRef } from '../../customers/models/customer.model';
 import { InvoiceAttachment, PaymentMethod } from '../../invoices/models/invoice.model';
 
@@ -24,6 +24,8 @@ export interface Collection {
   /** With the rep (PENDING) or in the treasury. */
   depositStatus: DepositStatus | null;
   deposit: DepositInfo['deposit'];
+  /** Cheque cashed (CLEARED) or bounced; null until a manager marks it. */
+  chequeStatus?: ChequeStatus | null;
   cancelReason: string | null;
   cancelledBy: PersonRef | null;
   cancelledAt: string | null;

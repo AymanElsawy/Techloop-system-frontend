@@ -1,6 +1,6 @@
 import { Collection, CollectionStatus } from '../../collections/models/collection.model';
 import { Invoice, InvoiceStatus, PaymentMethod } from '../../invoices/models/invoice.model';
-import { DepositStatus } from '../../treasury/models/treasury.model';
+import { ChequeStatus, DepositStatus } from '../../treasury/models/treasury.model';
 import { buildStatement } from './statement';
 import { ReturnStatus, SalesReturn } from '../../returns/returns.model';
 
@@ -30,6 +30,15 @@ describe('buildStatement', () => {
     const pending = { ...collection('C1', '2026-09-03', 300), depositStatus: DepositStatus.PENDING } as Collection;
     const lines = buildStatement([invoice('I1', '2026-09-01', 1000, 0)], [pending]);
     expect(lines.map((l) => [l.number, l.pending, l.balance])).toEqual([
+      ['C1', true, 1000],
+      ['I1', false, 1000],
+    ]);
+  });
+
+  it('never deducts a bounced cheque', () => {
+    const bounced = { ...collection('C1', '2026-09-03', 300), chequeStatus: ChequeStatus.BOUNCED } as Collection;
+    const lines = buildStatement([invoice('I1', '2026-09-01', 1000, 0)], [bounced]);
+    expect(lines.map((l) => [l.number, l.bounced, l.balance])).toEqual([
       ['C1', true, 1000],
       ['I1', false, 1000],
     ]);

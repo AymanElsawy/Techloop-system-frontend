@@ -1,5 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 
@@ -58,6 +59,19 @@ import { PaymentsTableComponent } from '../payments-table/payments-table.compone
           }
         </dl>
         <app-payments-table [payments]="d.payments" />
+        @if (d.expenses?.length) {
+          <div class="card space-y-2">
+            <h2 class="font-semibold">مصروفات المندوب المخصومة</h2>
+            <ul class="divide-y divide-stormy-teal-900 text-sm">
+              @for (e of d.expenses; track e.id) {
+                <li class="flex justify-between gap-3 py-2">
+                  <span>مصروف #{{ e.number }}{{ e.category ? ' · ' + e.category : '' }}{{ e.notes ? ' — ' + e.notes : '' }}</span>
+                  <span class="font-semibold tabular-nums">− {{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
       }
     </section>
   `,

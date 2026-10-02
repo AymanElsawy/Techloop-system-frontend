@@ -14,11 +14,30 @@
   } @else {
     <app-payments-table [payments]="pending.value()!" [selectable]="true" [(selected)]="selected" />
 
+    @if (expenses.value()?.length) {
+      <div class="card space-y-2">
+        <h2 class="font-semibold">مصروفات المندوب</h2>
+        <p class="text-sm text-stormy-teal">اتدفعت من النقدية اللي معاه. المتعلّم عليها بيتخصم من المبلغ وبيتسجل مصروف على الخزنة.</p>
+        <ul class="divide-y divide-stormy-teal-900">
+          @for (e of expenses.value(); track e.id) {
+            <li class="flex items-center gap-3 py-2 text-sm">
+              <input type="checkbox" [attr.aria-label]="'قبول المصروف ' + e.number" [checked]="selectedExpenses().includes(e.id)" (change)="toggleExpense(e.id)" />
+              <span class="flex-1">مصروف #{{ e.number }}{{ e.category ? ' · ' + e.category : '' }}{{ e.notes ? ' — ' + e.notes : '' }}</span>
+              <span class="font-semibold tabular-nums">− {{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
     <div class="card space-y-4">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="text-sm text-stormy-teal">إجمالي المستلم ({{ chosen().length }} من {{ pending.value()!.length }})</p>
-          <p class="mt-1 text-2xl font-bold tabular-nums">{{ chosenTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          <p class="mt-1 text-2xl font-bold tabular-nums">{{ netTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          @if (spent() > 0) {
+            <p class="text-xs text-stormy-teal">{{ chosenTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }} − مصروفات {{ spent() | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+          }
         </div>
         <ul class="space-y-1 text-sm">
           @for (m of chosenByMethod(); track m.method) {
@@ -36,7 +55,10 @@
       @if (error()) {
         <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ error() }}</p>
       }
-      <button type="button" class="btn-primary w-full" [disabled]="!chosen().length || saving()" (click)="submit()">
+      @if (expensesTooHigh()) {
+        <p role="alert" class="text-sm text-vibrant-coral-400">المصروفات أكبر من النقدي المستلم ({{ chosenCash() | currency: 'EGP' : 'symbol' : '1.0-2' }}). علّم على نقدي أكتر أو شيل مصروف.</p>
+      }
+      <button type="button" class="btn-primary w-full" [disabled]="!chosen().length || expensesTooHigh() || saving()" (click)="submit()">
         {{ saving() ? 'جاري الحفظ...' : 'تأكيد الاستلام' }}
       </button>
     </div>

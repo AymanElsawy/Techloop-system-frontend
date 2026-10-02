@@ -1,7 +1,7 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">المخزن</h1>
-    @if (isManager) {
+    @if (isAdmin) {
       <div class="flex flex-wrap gap-3">
         <a routerLink="/inventory/receive" class="btn-primary">وارد من مورد</a>
         @if (!showForm()) {
@@ -13,7 +13,7 @@
   <app-inventory-tabs />
 
   @if (isManager) {
-    @if (showForm()) {
+    @if (isAdmin && showForm()) {
       <form [formGroup]="form" (ngSubmit)="create()" novalidate class="card space-y-4">
         <h2 class="font-semibold">مخزن جديد</h2>
         <div class="grid gap-4 sm:grid-cols-2">

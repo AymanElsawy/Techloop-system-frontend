@@ -96,7 +96,16 @@
                     {{ pending() ? 'جاري بدء الزيارة...' : 'بدء الزيارة' }}
                   </button>
                 }
-                <button type="button" class="btn-outline" [disabled]="pending()" (click)="cancel()">إلغاء الزيارة</button>
+                @if (!isPast(v.scheduledAt)) {
+                  <button
+                    type="button"
+                    class="btn border border-vibrant-coral-400 bg-transparent text-vibrant-coral-400 hover:bg-vibrant-coral-900/40"
+                    [disabled]="pending()"
+                    (click)="cancel()"
+                  >
+                    إلغاء الزيارة
+                  </button>
+                }
               </div>
             } @else if (!showCompleteForm()) {
               <button type="button" class="btn-accent" (click)="showCompleteForm.set(true)">إنهاء الزيارة</button>

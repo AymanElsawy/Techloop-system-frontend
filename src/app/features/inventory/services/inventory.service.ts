@@ -20,6 +20,7 @@ const MOVE_PATH: Record<ManualMovement, string> = {
   [MovementType.RECEIVE]: 'receive',
   [MovementType.ISSUE]: 'issue',
   [MovementType.RETURN]: 'return',
+  [MovementType.TRANSFER]: 'transfer',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,7 +48,14 @@ export class InventoryService {
   move(
     warehouseId: string,
     type: ManualMovement,
-    data: { repId?: string; supplierId?: string; items: StockItemInput[]; notes?: string | null },
+    data: {
+      repId?: string;
+      supplierId?: string;
+      items: StockItemInput[];
+      /** RECEIVE only: what's actually paid now; the rest becomes supplier debt. */
+      paidAmount?: number;
+      notes?: string | null;
+    },
   ): Observable<Movement> {
     return this.http
       .post<ApiResponse<Movement>>(`${this.url}/warehouses/${warehouseId}/${MOVE_PATH[type]}`, data)
@@ -59,7 +67,18 @@ export class InventoryService {
     return this.http.get<ApiResponse<Movement[]>>(`${this.url}/movements`, { params }).pipe(map(({ data }) => data));
   }
 
+  getMovement(id: string): Observable<Movement> {
+    return this.http.get<ApiResponse<Movement>>(`${this.url}/movements/${id}`).pipe(map(({ data }) => data));
+  }
+
   getMyStock(): Observable<MyStock> {
     return this.http.get<ApiResponse<MyStock>>(`${this.url}/my-stock`).pipe(map(({ data }) => data));
+  }
+
+  /** تسوية جرد: the counted quantity per product; the backend records the difference. */
+  adjust(warehouseId: string, data: { items: { productId: string; counted: number }[]; reason: string }): Observable<Movement> {
+    return this.http
+      .post<ApiResponse<Movement>>(`${this.url}/warehouses/${warehouseId}/adjust`, data)
+      .pipe(map(({ data }) => data));
   }
 }

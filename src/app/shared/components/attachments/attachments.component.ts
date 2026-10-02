@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe } from '../../date.pipe';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 

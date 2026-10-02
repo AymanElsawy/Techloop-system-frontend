@@ -102,6 +102,26 @@
         <textarea id="notes" formControlName="notes" rows="3" class="form-input"></textarea>
       </div>
 
+      @if (isManager) {
+        <div>
+          <label for="credit-limit" class="form-label">حد الائتمان (ج.م)</label>
+          <input id="credit-limit" type="number" min="0" step="1" inputmode="decimal" formControlName="creditLimit" class="form-input" dir="ltr" placeholder="بدون حد" />
+          <p class="mt-1 text-xs text-stormy-teal">أقصى مديونية يقدر المندوب يبيع لحدها. سيبه فاضي لو مفيش حد.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="terms" class="form-label">مدة السداد (يوم)</label>
+            <input id="terms" type="number" min="0" max="365" step="1" inputmode="numeric" formControlName="paymentTermDays" class="form-input" dir="ltr" placeholder="بدون" />
+            <p class="mt-1 text-xs text-stormy-teal">الفاتورة الآجلة تستحق بعدها. بعد الميعاد المندوب ميقدرش يبيعله آجل.</p>
+          </div>
+          <div>
+            <label for="discount" class="form-label">نسبة الخصم %</label>
+            <input id="discount" type="number" min="0" max="100" step="0.5" inputmode="decimal" formControlName="discountPercent" class="form-input" dir="ltr" placeholder="بدون" />
+            <p class="mt-1 text-xs text-stormy-teal">خصم تلقائي على فواتيره، وأقصى خصم يقدر المندوب يديه.</p>
+          </div>
+        </div>
+      }
+
       <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
         {{ saving() ? 'جاري الحفظ...' : id() ? 'حفظ التعديلات' : 'إضافة العميل' }}
       </button>

@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -113,6 +114,13 @@ export class VisitDetailsComponent {
         nextVisitAt: nextVisitAt ? new Date(nextVisitAt).toISOString() : undefined,
       }),
     );
+  }
+
+  /** True once the visit's day (not just its exact time) has passed — a visit scheduled for "now" stays cancellable. */
+  protected isPast(scheduledAt: string): boolean {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return new Date(scheduledAt) < startOfToday;
   }
 
   protected cancel(): void {

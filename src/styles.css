@@ -6,49 +6,49 @@
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
 
-  --color-graphite: #353535;
-  --color-graphite-100: #0b0b0b;
-  --color-graphite-200: #151515;
-  --color-graphite-300: #202020;
-  --color-graphite-400: #2b2b2b;
-  --color-graphite-500: #353535;
-  --color-graphite-600: #5e5e5e;
-  --color-graphite-700: #868686;
-  --color-graphite-800: #aeaeae;
-  --color-graphite-900: #d7d7d7;
+  --color-graphite: #111c22;
+  --color-graphite-100: #0c1418;
+  --color-graphite-200: #111c22;
+  --color-graphite-300: #111c22;
+  --color-graphite-400: #233843;
+  --color-graphite-500: #111c22;
+  --color-graphite-600: #345565;
+  --color-graphite-700: #457187;
+  --color-graphite-800: #78a4ba;
+  --color-graphite-900: #bcd1dc;
 
-  --color-stormy-teal: #3c6e71;
-  --color-stormy-teal-100: #0c1617;
-  --color-stormy-teal-200: #182c2d;
-  --color-stormy-teal-300: #244344;
-  --color-stormy-teal-400: #30595b;
-  --color-stormy-teal-500: #3c6e71;
-  --color-stormy-teal-600: #539a9e;
-  --color-stormy-teal-700: #7bb6b9;
-  --color-stormy-teal-800: #a7ced1;
-  --color-stormy-teal-900: #d3e7e8;
+  --color-stormy-teal: #045d95;
+  --color-stormy-teal-100: #011623;
+  --color-stormy-teal-200: #011f32;
+  --color-stormy-teal-300: #033e63;
+  --color-stormy-teal-400: #033e63;
+  --color-stormy-teal-500: #045d95;
+  --color-stormy-teal-600: #057dc7;
+  --color-stormy-teal-700: #0a85c2;
+  --color-stormy-teal-800: #9edbfa;
+  --color-stormy-teal-900: #cfedfc;
 
-  --color-alabaster-grey: #d9d9d9;
-  --color-alabaster-grey-100: #2b2b2b;
-  --color-alabaster-grey-200: #575757;
-  --color-alabaster-grey-300: #828282;
-  --color-alabaster-grey-400: #adadad;
-  --color-alabaster-grey-500: #d9d9d9;
-  --color-alabaster-grey-600: #e0e0e0;
-  --color-alabaster-grey-700: #e8e8e8;
-  --color-alabaster-grey-800: #f0f0f0;
-  --color-alabaster-grey-900: #f7f7f7;
+  --color-alabaster-grey: #bcd1dc;
+  --color-alabaster-grey-100: #111c22;
+  --color-alabaster-grey-200: #345565;
+  --color-alabaster-grey-300: #578da8;
+  --color-alabaster-grey-400: #9abbcb;
+  --color-alabaster-grey-500: #bcd1dc;
+  --color-alabaster-grey-600: #dde8ee;
+  --color-alabaster-grey-700: #dde8ee;
+  --color-alabaster-grey-800: #eef4f6;
+  --color-alabaster-grey-900: #e7f6fe;
 
-  --color-yale-blue: #284b63;
-  --color-yale-blue-100: #080f14;
-  --color-yale-blue-200: #101e27;
-  --color-yale-blue-300: #182d3b;
-  --color-yale-blue-400: #203c4e;
-  --color-yale-blue-500: #284b63;
-  --color-yale-blue-600: #3e7397;
-  --color-yale-blue-700: #6099be;
-  --color-yale-blue-800: #95bbd4;
-  --color-yale-blue-900: #cadde9;
+  --color-yale-blue: #233843;
+  --color-yale-blue-100: #0c1418;
+  --color-yale-blue-200: #111c22;
+  --color-yale-blue-300: #111c22;
+  --color-yale-blue-400: #345565;
+  --color-yale-blue-500: #233843;
+  --color-yale-blue-600: #457187;
+  --color-yale-blue-700: #578da8;
+  --color-yale-blue-800: #bcd1dc;
+  --color-yale-blue-900: #dde8ee;
 
   /* Status colors: warning (apricot) and danger (coral). */
   --color-soft-apricot: #fed9b7;
@@ -62,41 +62,42 @@
   --color-soft-apricot-800: #fff0e3;
   --color-soft-apricot-900: #fff8f1;
 
-  --color-vibrant-coral: #f07167;
-  --color-vibrant-coral-100: #3e0a06;
-  --color-vibrant-coral-200: #7c140c;
-  --color-vibrant-coral-300: #bb1e12;
-  --color-vibrant-coral-400: #ea3528;
-  --color-vibrant-coral-500: #f07167;
-  --color-vibrant-coral-600: #f38c84;
-  --color-vibrant-coral-700: #f6a9a3;
-  --color-vibrant-coral-800: #f9c5c2;
-  --color-vibrant-coral-900: #fce2e0;
+  --color-vibrant-coral: #ff3333;
+  --color-vibrant-coral-100: #660000;
+  --color-vibrant-coral-200: #990000;
+  --color-vibrant-coral-300: #cc0000;
+  --color-vibrant-coral-400: #cc0000;
+  --color-vibrant-coral-500: #ff3333;
+  --color-vibrant-coral-600: #ff6666;
+  --color-vibrant-coral-700: #ff9999;
+  --color-vibrant-coral-800: #ffcccc;
+  --color-vibrant-coral-900: #ffe5e5;
 
   --color-surface: #ffffff;
 
-  /* Dark mode palettes (greys reuse alabaster-grey values below) */
-  --color-prussian-blue: #14213d;
-  --color-prussian-blue-100: #04070c;
-  --color-prussian-blue-200: #080d19;
-  --color-prussian-blue-300: #0c1425;
-  --color-prussian-blue-400: #101b31;
-  --color-prussian-blue-500: #14213d;
-  --color-prussian-blue-600: #29447e;
-  --color-prussian-blue-700: #3e67bf;
-  --color-prussian-blue-800: #7e99d5;
-  --color-prussian-blue-900: #beccea;
+  /* Dark mode palettes. Names kept from older palettes:
+     prussian-blue = dark base (ink-black / deep-space-blue / blue-slate), orange = accent (eggshell). */
+  --color-prussian-blue: #1d2d44;
+  --color-prussian-blue-100: #030407;
+  --color-prussian-blue-200: #080b14;
+  --color-prussian-blue-300: #0d1321;
+  --color-prussian-blue-400: #31495e;
+  --color-prussian-blue-500: #1d2d44;
+  --color-prussian-blue-600: #3e5c76;
+  --color-prussian-blue-700: #7d9eba;
+  --color-prussian-blue-800: #a8bed1;
+  --color-prussian-blue-900: #c5d3e6;
 
-  --color-orange: #fca311;
-  --color-orange-100: #362101;
-  --color-orange-200: #6b4201;
-  --color-orange-300: #a16402;
-  --color-orange-400: #d68502;
-  --color-orange-500: #fca311;
-  --color-orange-600: #fdb541;
-  --color-orange-700: #fec871;
-  --color-orange-800: #fedaa0;
-  --color-orange-900: #ffedd0;
+  --color-orange: #f0ebd8;
+  --color-orange-100: #413919;
+  --color-orange-200: #837133;
+  --color-orange-300: #bca654;
+  --color-orange-400: #d6c895;
+  --color-orange-500: #f0ebd8;
+  --color-orange-600: #f2eedf;
+  --color-orange-700: #f6f2e7;
+  --color-orange-800: #f9f7ef;
+  --color-orange-900: #fcfbf7;
 }
 
 @utility btn {
@@ -105,7 +106,7 @@
     active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(40_75_99/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
+  @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(35_56_67/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
 }
 @utility btn-accent {
   @apply btn bg-vibrant-coral-400 text-white shadow-[0_1px_0_rgb(124_20_12/0.3)] hover:bg-vibrant-coral-400 dark:bg-orange-400 dark:text-black dark:hover:bg-orange;
@@ -114,7 +115,7 @@
   @apply btn border border-stormy-teal-800 bg-surface text-yale-blue hover:border-stormy-teal-700 hover:bg-stormy-teal-900/60;
 }
 @utility card {
-  @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(40_75_99/0.05),0_4px_12px_-6px_rgb(40_75_99/0.08)];
+  @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(35_56_67/0.05),0_4px_12px_-6px_rgb(35_56_67/0.08)];
 }
 @utility form-label {
   @apply mb-1.5 block text-sm font-semibold text-yale-blue;
@@ -166,7 +167,7 @@ select.form-input {
   cursor: pointer;
   padding-inline-end: 2.5rem;
   min-width: 10rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%233c6e71' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23045d95' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: left 0.75rem center;
   background-size: 1.1rem;
@@ -179,83 +180,83 @@ select.form-input:disabled {
 }
 select.form-input option {
   color: var(--color-yale-blue);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 /* Dark mode: the light tokens are remapped, so components need no dark: classes.
    Shade scales are mirrored (light backgrounds become dark, dark text becomes light). */
 .dark {
   color-scheme: dark;
-  --color-surface: #14213d;
-  --color-graphite: #e5e5e5;
-  --color-alabaster-grey: #14213d;
-  --color-alabaster-grey-800: #0c1425;
-  --color-alabaster-grey-900: #101b31;
-  --color-alabaster-grey-400: #29447e;
-  --color-alabaster-grey-100: #fafafa;
-  --color-yale-blue: #e5e5e5;
-  --color-yale-blue-100: #fafafa;
-  --color-yale-blue-200: #beccea;
-  --color-yale-blue-300: #beccea;
-  --color-yale-blue-400: #29447e;
-  --color-yale-blue-500: #beccea;
-  --color-yale-blue-600: #7e99d5;
-  --color-yale-blue-700: #3e67bf;
-  --color-yale-blue-800: #29447e;
-  --color-yale-blue-900: #101b31;
-  --color-stormy-teal: #b8b8b8;
-  --color-stormy-teal-100: #fafafa;
-  --color-stormy-teal-200: #f5f5f5;
-  --color-stormy-teal-300: #f0f0f0;
-  --color-stormy-teal-400: #b8b8b8;
-  --color-stormy-teal-500: #b8b8b8;
-  --color-stormy-teal-600: #8a8a8a;
-  --color-stormy-teal-700: #5c5c5c;
-  --color-stormy-teal-800: #29447e;
-  --color-stormy-teal-900: #1f3158;
-  --color-soft-apricot: #fca311;
-  --color-soft-apricot-100: #ffedd0;
-  --color-soft-apricot-200: #fedaa0;
-  --color-soft-apricot-300: #fedaa0;
-  --color-soft-apricot-400: #fec871;
-  --color-soft-apricot-500: #fca311;
-  --color-soft-apricot-600: #fdb541;
-  --color-soft-apricot-700: #a16402;
-  --color-soft-apricot-800: #6b4201;
-  --color-soft-apricot-900: #362101;
-  --color-vibrant-coral: #fdb541;
-  --color-vibrant-coral-100: #ffedd0;
-  --color-vibrant-coral-200: #fedaa0;
-  --color-vibrant-coral-300: #fec871;
-  --color-vibrant-coral-400: #fdb541;
-  --color-vibrant-coral-500: #fca311;
-  --color-vibrant-coral-600: #d68502;
-  --color-vibrant-coral-700: #a16402;
-  --color-vibrant-coral-800: #6b4201;
-  --color-vibrant-coral-900: #362101;
+  --color-surface: #1d2d44;
+  --color-graphite: #f0ebd8;
+  --color-alabaster-grey: #1d2d44;
+  --color-alabaster-grey-800: #0d1321;
+  --color-alabaster-grey-900: #253746;
+  --color-alabaster-grey-400: #566e8f;
+  --color-alabaster-grey-100: #fcfbf7;
+  --color-yale-blue: #f0ebd8;
+  --color-yale-blue-100: #fcfbf7;
+  --color-yale-blue-200: #e3e8ee;
+  --color-yale-blue-300: #e3e8ee;
+  --color-yale-blue-400: #566e8f;
+  --color-yale-blue-500: #c5d3e6;
+  --color-yale-blue-600: #a8bed1;
+  --color-yale-blue-700: #7d9eba;
+  --color-yale-blue-800: #566e8f;
+  --color-yale-blue-900: #3e5c76;
+  --color-stormy-teal: #abb9cd;
+  --color-stormy-teal-100: #fcfbf7;
+  --color-stormy-teal-200: #f9f7ef;
+  --color-stormy-teal-300: #f6f2e7;
+  --color-stormy-teal-400: #abb9cd;
+  --color-stormy-teal-500: #abb9cd;
+  --color-stormy-teal-600: #8fa2bc;
+  --color-stormy-teal-700: #abb9cd;
+  --color-stormy-teal-800: #566e8f;
+  --color-stormy-teal-900: #31495e;
+  --color-soft-apricot: #eaac8b;
+  --color-soft-apricot-100: #f7e0d4;
+  --color-soft-apricot-200: #f4d3c2;
+  --color-soft-apricot-300: #f4d3c2;
+  --color-soft-apricot-400: #f1c6af;
+  --color-soft-apricot-500: #eaac8b;
+  --color-soft-apricot-600: #edb99d;
+  --color-soft-apricot-700: #bd5822;
+  --color-soft-apricot-800: #7e3b17;
+  --color-soft-apricot-900: #3f1d0b;
+  --color-vibrant-coral: #c38391;
+  --color-vibrant-coral-100: #eedde0;
+  --color-vibrant-coral-200: #e0bfc6;
+  --color-vibrant-coral-300: #d2a1ab;
+  --color-vibrant-coral-400: #c38391;
+  --color-vibrant-coral-500: #b56576;
+  --color-vibrant-coral-600: #98495a;
+  --color-vibrant-coral-700: #723744;
+  --color-vibrant-coral-800: #4c252d;
+  --color-vibrant-coral-900: #261217;
 }
-/* Areas that are dark in both themes (sidebar, highlight cards) keep the light-mode blues. */
+/* Areas that are dark in both themes (sidebar, highlight cards) use ink-black / blue-slate tints. */
 .dark .keep-colors {
-  --color-stormy-teal: #3c6e71;
-  --color-stormy-teal-100: #0c1617;
-  --color-stormy-teal-200: #182c2d;
-  --color-stormy-teal-300: #244344;
-  --color-stormy-teal-400: #30595b;
-  --color-stormy-teal-500: #3c6e71;
-  --color-stormy-teal-600: #539a9e;
-  --color-stormy-teal-700: #7bb6b9;
-  --color-stormy-teal-800: #a7ced1;
-  --color-stormy-teal-900: #d3e7e8;
-  --color-yale-blue: #284b63;
-  --color-yale-blue-100: #080f14;
-  --color-yale-blue-200: #101e27;
-  --color-yale-blue-300: #182d3b;
-  --color-yale-blue-400: #203c4e;
-  --color-yale-blue-500: #284b63;
-  --color-yale-blue-600: #3e7397;
-  --color-yale-blue-700: #6099be;
-  --color-yale-blue-800: #95bbd4;
-  --color-yale-blue-900: #cadde9;
+  --color-stormy-teal: #3e5c76;
+  --color-stormy-teal-100: #0c1217;
+  --color-stormy-teal-200: #19242f;
+  --color-stormy-teal-300: #253746;
+  --color-stormy-teal-400: #31495e;
+  --color-stormy-teal-500: #3e5c76;
+  --color-stormy-teal-600: #547da0;
+  --color-stormy-teal-700: #f0ebd8;
+  --color-stormy-teal-800: #abb9cd;
+  --color-stormy-teal-900: #d4dfe8;
+  --color-yale-blue: #080b14;
+  --color-yale-blue-100: #030407;
+  --color-yale-blue-200: #05080d;
+  --color-yale-blue-300: #0a0f1a;
+  --color-yale-blue-400: #1d2d44;
+  --color-yale-blue-500: #080b14;
+  --color-yale-blue-600: #36547e;
+  --color-yale-blue-700: #7d9eba;
+  --color-yale-blue-800: #a8bed1;
+  --color-yale-blue-900: #c5d3e6;
 }
 
 /* Printing: A4 sheet only (the layout hides its chrome with print:hidden). */

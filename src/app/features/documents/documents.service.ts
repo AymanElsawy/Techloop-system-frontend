@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../../core/models/api-response';
 import { Movement } from '../inventory/models/inventory.model';
-import { Company, DocumentFilters, DocumentRow } from './documents.model';
+import { Backup, Company, DocumentFilters, DocumentRow } from './documents.model';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService {
@@ -31,5 +31,17 @@ export class DocumentsService {
 
   updateCompany(data: Company): Observable<Company> {
     return this.http.put<ApiResponse<Company>>(`${this.api}/settings/company`, data).pipe(map(({ data }) => data));
+  }
+
+  getBackups(): Observable<Backup[]> {
+    return this.http.get<ApiResponse<Backup[]>>(`${this.api}/settings/backups`).pipe(map(({ data }) => data));
+  }
+
+  createBackup(): Observable<Backup> {
+    return this.http.post<ApiResponse<Backup>>(`${this.api}/settings/backups`, {}).pipe(map(({ data }) => data));
+  }
+
+  downloadBackup(name: string): Observable<Blob> {
+    return this.http.get(`${this.api}/settings/backups/${name}`, { responseType: 'blob' });
   }
 }

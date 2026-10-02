@@ -1,4 +1,4 @@
-import type { DepositInfo, DepositStatus } from '../../treasury/models/treasury.model';
+import type { ChequeStatus, DepositInfo, DepositStatus } from '../../treasury/models/treasury.model';
 import { PersonRef } from '../../customers/models/customer.model';
 import { ProductUnit } from '../../products/models/product.model';
 
@@ -43,6 +43,8 @@ export interface InvoiceItem {
   name: string;
   unit: ProductUnit | null;
   unitPrice: number;
+  /** total = unitPrice × quantity − this % (0 on old invoices). */
+  discountPercent?: number;
   quantity: number;
   total: number;
 }
@@ -68,8 +70,15 @@ export interface Invoice {
   /** Up-front payment: with the rep (PENDING) or in the treasury. */
   depositStatus: DepositStatus | null;
   deposit: DepositInfo['deposit'];
+  /** Cheque cashed (CLEARED) or bounced; null until a manager marks it. */
+  chequeStatus?: ChequeStatus | null;
   items: InvoiceItem[];
+  /** After discount. */
   total: number;
+  /** Sum of the line discounts (EGP). */
+  discount?: number;
+  /** From the customer's payment terms; null = no terms. */
+  dueDate?: string | null;
   paidAmount: number;
   /** Left unpaid on this invoice. */
   remaining: number;
@@ -94,7 +103,8 @@ export interface CreateInvoiceRequest {
   visitId: string | null;
   /** Managers only; reps always sell from their own warehouse. */
   warehouseId: string | null;
-  items: { productId: string; quantity: number }[];
+  /** unitPrice omitted = the product's sale price. */
+  items: { productId: string; quantity: number; unitPrice?: number; discountPercent?: number }[];
   paidAmount: number;
   paymentMethod: PaymentMethod | null;
   chequeNumber: string | null;

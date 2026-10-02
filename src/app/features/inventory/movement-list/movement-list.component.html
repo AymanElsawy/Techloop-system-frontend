@@ -57,7 +57,7 @@
                 }
               </td>
               <td class="px-4 py-3">
-                <p>{{ m.warehouse?.name ?? '—' }}</p>
+                <p>{{ m.warehouse?.name ?? '—' }}{{ m.toWarehouse ? ' ← ' + m.toWarehouse.name : '' }}</p>
                 @if (m.supplier) {
                   <a [routerLink]="['/suppliers', m.supplier.id]" class="text-xs text-vibrant-coral-400 hover:underline">المورد: {{ m.supplier.name }}</a>
                 }
@@ -69,7 +69,7 @@
                 <ul class="space-y-0.5">
                   @for (i of m.items; track i.product) {
                     <li>
-                      {{ i.name }}: <span class="font-semibold tabular-nums">{{ i.quantity }}</span>
+                      {{ i.name }}: <span class="font-semibold tabular-nums" dir="ltr">{{ m.type === 'ADJUST' && i.quantity > 0 ? '+' : '' }}{{ i.quantity }}</span>
                       @if (isManager && i.unitCost !== null && i.unitCost !== undefined) {
                         <span class="text-xs text-stormy-teal">× {{ i.unitCost }} ج.م.</span>
                       }

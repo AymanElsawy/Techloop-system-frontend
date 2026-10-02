@@ -1,13 +1,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
-import { PRODUCT_UNIT_LABELS, ProductFilters, ProductUnit, expiryState, isLowStock } from '../models/product.model';
+import { httpErrorMessage } from '../../../core/http/http-error';
+import { PRODUCT_UNIT_LABELS, Product, ProductFilters, ProductUnit, expiryState, isLowStock } from '../models/product.model';
 import { ProductService } from '../services/product.service';
 import { InventoryTabsComponent } from '../../inventory/inventory-tabs/inventory-tabs.component';
 
@@ -70,5 +73,18 @@ export class ProductListComponent {
     this.unit.set('');
     this.lowStock.set(false);
     this.active.set(this.isManager ? 'true' : '');
+  }
+
+  protected deleteProduct(p: Product): void {
+    if (!confirm(`حذف الصنف "${p.name}"؟`)) return;
+    this.productService.deleteProduct(p.id).subscribe({
+      next: () => this.products.reload(),
+      error: (err: unknown) =>
+        alert(
+          err instanceof HttpErrorResponse && err.status === 409
+            ? 'الصنف ده عليه رصيد أو حركات، مينفعش يتحذف. أوقفه من التعديل بدل كده.'
+            : httpErrorMessage(err),
+        ),
+    });
   }
 }

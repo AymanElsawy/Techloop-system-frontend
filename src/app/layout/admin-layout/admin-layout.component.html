@@ -1,12 +1,18 @@
 <div class="flex min-h-screen">
-  <!-- Sidebar (desktop) -->
-  <aside class="print:hidden sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-yale-blue text-white md:flex keep-colors dark:bg-prussian-blue-200">
-    <div class="flex items-center gap-3 border-b border-yale-blue-400 px-5 py-5">
-      <span class="flex size-10 items-center justify-center rounded-lg bg-stormy-teal font-bold text-white shadow-[inset_0_-2px_0_rgb(0_0_0/0.15)]" aria-hidden="true">VP</span>
-      <span class="leading-tight">
-        <span class="block font-bold" dir="ltr">Veterinary Pharma</span>
-        <span class="block text-xs text-stormy-teal-800">إدارة المبيعات والتحصيل</span>
-      </span>
+  <!-- Mobile drawer backdrop -->
+  @if (menuOpen()) {
+    <div class="fixed inset-0 z-20 bg-black/40 md:hidden" (click)="menuOpen.set(false)" aria-hidden="true"></div>
+  }
+
+  <!-- Sidebar: fixed on desktop, drawer on mobile -->
+  <aside
+    id="main-sidebar"
+    class="print:hidden fixed inset-y-0 start-0 z-30 h-screen w-64 shrink-0 flex-col overflow-y-auto bg-yale-blue text-white md:sticky md:top-0 md:flex keep-colors dark:bg-prussian-blue-200"
+    [class.hidden]="!menuOpen()"
+    [class.flex]="menuOpen()"
+  >
+    <div class="border-b border-yale-blue-400">
+      <img src="images/logo-tech.png" alt="Techloop" class="block h-auto w-full" />
     </div>
     <nav class="flex-1 space-y-1 px-3 py-4" aria-label="القائمة الرئيسية">
       @for (item of navItems(); track item.path) {
@@ -14,12 +20,16 @@
           [routerLink]="item.path"
           routerLinkActive="bg-yale-blue-400 text-white before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-full before:bg-stormy-teal-700 dark:before:bg-orange"
           ariaCurrentWhenActive="page"
+          (click)="menuOpen.set(false)"
           class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-yale-blue-900 transition hover:bg-yale-blue-400/60 hover:text-white focus-visible:outline-2 focus-visible:outline-stormy-teal-700"
         >
           <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
           </svg>
           {{ item.label }}
+          @if (item.path === '/notifications' && unread()) {
+            <span class="ms-auto rounded-full bg-vibrant-coral-400 px-2 py-0.5 text-xs font-bold text-white" [attr.aria-label]="unread() + ' غير مقروء'">{{ unread() }}</span>
+          }
         </a>
       }
     </nav>
@@ -29,6 +39,18 @@
     <!-- Header -->
     <header class="print:hidden sticky top-0 z-10 flex items-center justify-between border-b border-stormy-teal-900 bg-surface/90 px-4 py-3 backdrop-blur md:px-8">
       <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="btn-outline w-11 px-0 md:hidden"
+          (click)="menuOpen.set(!menuOpen())"
+          aria-controls="main-sidebar"
+          [attr.aria-expanded]="menuOpen()"
+          aria-label="القائمة"
+        >
+          <svg class="mx-auto size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <span class="flex size-9 items-center justify-center rounded-full bg-stormy-teal-900 text-sm font-bold text-stormy-teal-400" aria-hidden="true">{{ user()?.name?.charAt(0) }}</span>
         <div>
         <p class="font-semibold text-yale-blue">{{ user()?.name }}</p>
@@ -43,25 +65,8 @@
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24 md:px-8 md:pb-10 print:max-w-none print:p-0">
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8 md:pb-10 print:max-w-none print:p-0">
       <router-outlet />
     </main>
   </div>
-
-  <!-- Bottom navigation (mobile) -->
-  <nav class="print:hidden fixed inset-x-0 bottom-0 z-10 flex border-t border-yale-blue-400 bg-yale-blue md:hidden keep-colors dark:bg-prussian-blue-200" aria-label="القائمة الرئيسية">
-    @for (item of navItems(); track item.path) {
-      <a
-        [routerLink]="item.path"
-        routerLinkActive="text-stormy-teal-700 font-semibold"
-        ariaCurrentWhenActive="page"
-        class="flex flex-1 flex-col items-center gap-1 py-2.5 text-xs text-yale-blue-900"
-      >
-        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
-        </svg>
-        {{ item.label }}
-      </a>
-    }
-  </nav>
 </div>

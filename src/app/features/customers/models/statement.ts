@@ -1,7 +1,7 @@
 import { Collection, CollectionStatus } from '../../collections/models/collection.model';
 import { DEFERRED_LABEL, Invoice, InvoiceStatus, PAYMENT_METHOD_LABELS } from '../../invoices/models/invoice.model';
 import { round2 } from '../../invoices/models/invoice.model';
-import { DepositStatus } from '../../treasury/models/treasury.model';
+import { ChequeStatus, DepositStatus } from '../../treasury/models/treasury.model';
 import { ReturnStatus, SalesReturn } from '../../returns/returns.model';
 
 /** One line of a customer's account statement (كشف حساب). */
@@ -19,6 +19,8 @@ export interface StatementLine {
   cancelled: boolean;
   /** Payment still with the rep: shown, but not deducted from the balance until handed over. */
   pending: boolean;
+  /** A bounced cheque: shown, never deducted. */
+  bounced: boolean;
   /** Running balance after this line; null for cancelled lines. */
   balance: number | null;
 }
@@ -26,7 +28,7 @@ export interface StatementLine {
 /**
  * Merges invoices, collections and sales returns into a statement with a running balance.
  * Cancelled entries are listed but don't affect the balance; payments still with the rep
- * add to the debit side only. Returned newest first.
+ * add to the debit side only, and bounced cheques never reduce it. Returned newest first.
  */
 export function buildStatement(
   invoices: Invoice[],
@@ -45,6 +47,7 @@ export function buildStatement(
       createdBy: inv.createdBy.name,
       cancelled: inv.status === InvoiceStatus.CANCELLED,
       pending: inv.depositStatus === DepositStatus.PENDING,
+      bounced: inv.chequeStatus === ChequeStatus.BOUNCED,
       balance: null,
     })),
     ...collections.map((col) => ({
@@ -58,6 +61,7 @@ export function buildStatement(
       createdBy: col.createdBy.name,
       cancelled: col.status === CollectionStatus.CANCELLED,
       pending: col.depositStatus === DepositStatus.PENDING,
+      bounced: col.chequeStatus === ChequeStatus.BOUNCED,
       balance: null,
     })),
     ...returns.map((r) => ({
@@ -71,6 +75,7 @@ export function buildStatement(
       createdBy: r.createdBy.name,
       cancelled: r.status === ReturnStatus.CANCELLED,
       pending: false,
+      bounced: false,
       balance: null,
     })),
   ];
@@ -79,7 +84,7 @@ export function buildStatement(
   const chronological = lines.sort((a, b) => a.date.localeCompare(b.date));
   for (const line of chronological) {
     if (line.cancelled) continue;
-    balance = round2(balance + line.debit - (line.pending ? 0 : line.credit));
+    balance = round2(balance + line.debit - (line.pending || line.bounced ? 0 : line.credit));
     line.balance = balance;
   }
   return chronological.reverse();

@@ -3,6 +3,8 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 
+import { UserRole } from '../../../core/auth/auth.models';
+import { AuthService } from '../../../core/auth/auth.service';
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { PRODUCT_UNIT_LABELS } from '../../products/models/product.model';
@@ -18,6 +20,8 @@ import { InventoryTabsComponent } from '../inventory-tabs/inventory-tabs.compone
 })
 export class WarehouseDetailsComponent {
   private readonly inventory = inject(InventoryService);
+
+  protected readonly isAdmin = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
 
   readonly id = input.required<string>();
 

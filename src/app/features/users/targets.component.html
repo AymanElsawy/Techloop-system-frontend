@@ -1,0 +1,170 @@
+<section class="space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">التارجت والعمولات</h1>
+      <p class="text-sm text-stormy-teal">
+        المبيعات بعد خصم المرتجعات، والتحصيل من غير الشيكات المرتدة. العمولة = نسبة من صافي المبيعات + نسبة من التحصيل.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div role="group" aria-label="الفترة" class="flex overflow-hidden rounded-lg border border-stormy-teal-800">
+        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="!yearly() ? 'bg-yale-blue text-white' : ''"
+          [attr.aria-pressed]="!yearly()" (click)="yearly.set(false)">شهري</button>
+        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="yearly() ? 'bg-yale-blue text-white' : ''"
+          [attr.aria-pressed]="yearly()" (click)="yearly.set(true)">سنوي</button>
+      </div>
+      @if (yearly()) {
+        <div>
+          <label for="year" class="form-label">السنة</label>
+          <select id="year" class="form-input" (change)="year.set($any($event.target).value)">
+            @for (y of years; track y) {
+              <option [value]="y" [selected]="y === year()">{{ y }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <div>
+          <label for="month" class="form-label">الشهر</label>
+          <input id="month" type="month" class="form-input" [value]="month()" (change)="setMonth($event)" />
+        </div>
+      }
+      <a routerLink="/targets/print" [queryParams]="printParams()" class="btn-outline whitespace-nowrap">طباعة تقرير كل المناديب</a>
+    </div>
+  </div>
+
+  @if (feedback(); as f) {
+    <p role="status" class="rounded-lg px-3 py-2 text-sm"
+      [class]="f.ok ? 'bg-yale-blue-900 text-yale-blue-500' : 'bg-vibrant-coral-900 text-vibrant-coral-300'">
+      {{ f.message }}
+    </p>
+  }
+
+  @if (report.isLoading()) {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  } @else if (report.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="report.reload()" />
+  } @else if (!report.value()?.reps?.length) {
+    <app-status-message type="empty" message="مفيش مناديب." />
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="w-full text-right text-sm">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-semibold">المندوب</th>
+            <th scope="col" class="px-4 py-3 font-semibold">المبيعات / التارجت</th>
+            <th scope="col" class="px-4 py-3 font-semibold">التحصيل / التارجت</th>
+            <th scope="col" class="px-4 py-3 font-semibold">نسب العمولة</th>
+            <th scope="col" class="px-4 py-3 font-semibold">العمولة</th>
+            <th scope="col" class="px-4 py-3"><span class="sr-only">إجراءات</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stormy-teal-900">
+          @for (r of report.value()!.reps; track r.id) {
+            <tr>
+              <td class="px-4 py-3 font-medium">
+                {{ r.name }}
+                @if (!r.isActive) {
+                  <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs text-vibrant-coral-300">موقوف</span>
+                }
+                <p class="text-xs font-normal text-stormy-teal">
+                  {{ r.salesTarget || r.collectionTarget ? 'تارجت شهري' : '' }}
+                  {{ (r.salesTarget || r.collectionTarget) && (r.yearlySalesTarget || r.yearlyCollectionTarget) ? '·' : '' }}
+                  {{ r.yearlySalesTarget || r.yearlyCollectionTarget ? 'تارجت سنوي' : '' }}
+                </p>
+              </td>
+              <td class="min-w-52 px-4 py-3">
+                <p class="tabular-nums">
+                  {{ r.netSales | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  <span class="text-stormy-teal">/ {{ r.salesGoal ? (r.salesGoal | currency: 'EGP' : 'symbol' : '1.0-0') : 'بدون تارجت' }}</span>
+                </p>
+                @if (r.returns) {
+                  <p class="text-xs text-stormy-teal">مرتجع {{ r.returns | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                }
+                @if (r.salesProgress !== null) {
+                  <div class="mt-1 flex items-center gap-2">
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-alabaster-grey-800">
+                      <div class="h-full rounded-full" [class]="barClass(r.salesProgress)" [style.width.%]="r.salesProgress"></div>
+                    </div>
+                    <span class="w-10 text-xs font-semibold tabular-nums">{{ r.salesProgress }}%</span>
+                  </div>
+                }
+              </td>
+              <td class="min-w-52 px-4 py-3">
+                <p class="tabular-nums">
+                  {{ r.collected | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  <span class="text-stormy-teal">/ {{ r.collectionGoal ? (r.collectionGoal | currency: 'EGP' : 'symbol' : '1.0-0') : 'بدون تارجت' }}</span>
+                </p>
+                @if (r.collectionProgress !== null) {
+                  <div class="mt-1 flex items-center gap-2">
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-alabaster-grey-800">
+                      <div class="h-full rounded-full" [class]="barClass(r.collectionProgress)" [style.width.%]="r.collectionProgress"></div>
+                    </div>
+                    <span class="w-10 text-xs font-semibold tabular-nums">{{ r.collectionProgress }}%</span>
+                  </div>
+                }
+              </td>
+              <td class="px-4 py-3 text-xs">
+                <p>مبيعات {{ r.salesCommissionRate }}%</p>
+                <p>تحصيل {{ r.collectionCommissionRate }}%</p>
+              </td>
+              <td class="px-4 py-3 font-bold tabular-nums">{{ r.commission | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              <td class="px-4 py-3">
+                <a routerLink="/targets/print" [queryParams]="printParams(r.id)"
+                  class="me-3 whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline">طباعة</a>
+                @if (editingId() !== r.id) {
+                  <button type="button" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="edit(r)">
+                    تعديل التارجت
+                  </button>
+                }
+              </td>
+            </tr>
+            @if (editingId() === r.id) {
+              <tr class="bg-alabaster-grey-800">
+                <td colspan="6" class="px-4 py-3">
+                  <form [formGroup]="form" (submit)="save($event, r)" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+                    <div>
+                      <label [for]="'st-' + r.id" class="form-label">تارجت المبيعات (شهري)</label>
+                      <input [id]="'st-' + r.id" type="number" min="0" formControlName="salesTarget" class="form-input" placeholder="بدون" />
+                    </div>
+                    <div>
+                      <label [for]="'ct-' + r.id" class="form-label">تارجت التحصيل (شهري)</label>
+                      <input [id]="'ct-' + r.id" type="number" min="0" formControlName="collectionTarget" class="form-input" placeholder="بدون" />
+                    </div>
+                    <div>
+                      <label [for]="'yst-' + r.id" class="form-label">تارجت المبيعات (سنوي)</label>
+                      <input [id]="'yst-' + r.id" type="number" min="0" formControlName="yearlySalesTarget" class="form-input" placeholder="بدون" />
+                    </div>
+                    <div>
+                      <label [for]="'yct-' + r.id" class="form-label">تارجت التحصيل (سنوي)</label>
+                      <input [id]="'yct-' + r.id" type="number" min="0" formControlName="yearlyCollectionTarget" class="form-input" placeholder="بدون" />
+                    </div>
+                    <div>
+                      <label [for]="'sr-' + r.id" class="form-label">عمولة المبيعات %</label>
+                      <input [id]="'sr-' + r.id" type="number" min="0" max="100" step="0.1" formControlName="salesCommissionRate" class="form-input" />
+                    </div>
+                    <div>
+                      <label [for]="'cr-' + r.id" class="form-label">عمولة التحصيل %</label>
+                      <input [id]="'cr-' + r.id" type="number" min="0" max="100" step="0.1" formControlName="collectionCommissionRate" class="form-input" />
+                    </div>
+                    <div class="flex gap-3 sm:col-span-2">
+                      <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+                        {{ saving() ? 'جاري الحفظ...' : 'حفظ' }}
+                      </button>
+                      <button type="button" class="btn-outline" (click)="editingId.set(null)">إلغاء</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+        <tfoot>
+          <tr class="border-t border-stormy-teal-900 font-bold">
+            <td colspan="4" class="px-4 py-3">إجمالي العمولات</td>
+            <td colspan="2" class="px-4 py-3 tabular-nums">{{ totalCommission() | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+</section>

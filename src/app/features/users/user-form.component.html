@@ -13,22 +13,16 @@
     </div>
 
     <div>
-      <label for="email" class="form-label">البريد الإلكتروني</label>
-      <input id="email" type="email" formControlName="email" class="form-input" dir="ltr" autocomplete="off"
-        [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched" aria-describedby="email-error" />
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p id="email-error" class="form-error">
-          {{ form.controls.email.hasError('required') ? 'البريد الإلكتروني مطلوب.' : 'صيغة البريد الإلكتروني غير صحيحة.' }}
+      <label for="username" class="form-label">اسم الدخول</label>
+      <input id="username" formControlName="username" class="form-input" dir="ltr" autocomplete="off" autocapitalize="none" placeholder="ayman"
+        [attr.aria-invalid]="form.controls.username.invalid && form.controls.username.touched" aria-describedby="username-hint username-error" />
+      <p id="username-hint" class="mt-1 text-xs text-stormy-teal">
+        كلمة المرور الافتراضية <span dir="ltr" class="font-semibold">123456A</span>، والمستخدم هيغيرها أول ما يدخل.
+      </p>
+      @if (form.controls.username.touched && form.controls.username.invalid) {
+        <p id="username-error" class="form-error">
+          {{ form.controls.username.hasError('required') ? 'اسم الدخول مطلوب.' : 'من 3 لـ 30 حرف إنجليزي أو رقم أو . _ - من غير مسافات.' }}
         </p>
-      }
-    </div>
-
-    <div>
-      <label for="password" class="form-label">كلمة المرور</label>
-      <input id="password" type="password" formControlName="password" class="form-input" dir="ltr" autocomplete="new-password"
-        [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched" aria-describedby="password-error" />
-      @if (form.controls.password.touched && form.controls.password.invalid) {
-        <p id="password-error" class="form-error">كلمة المرور 8 أحرف على الأقل.</p>
       }
     </div>
 
@@ -49,6 +43,9 @@
       @if (!governorates().length) {
         <p class="text-xs text-soft-apricot-300" role="status">المندوب بدون محافظات لن يرى أي عميل.</p>
       }
+    }
+
+    @if (hasWarehouse()) {
       <div>
         <label for="warehouse" class="form-label">المخزن التابع له</label>
         <select id="warehouse" formControlName="warehouse" class="form-input">
@@ -58,7 +55,9 @@
           }
         </select>
         @if (!form.controls.warehouse.value) {
-          <p class="mt-1 text-xs text-soft-apricot-300" role="status">المندوب بدون مخزن لن يستطيع البيع.</p>
+          <p class="mt-1 text-xs text-soft-apricot-300" role="status">
+            {{ isSalesRep() ? 'المندوب بدون مخزن لن يستطيع البيع.' : 'مندوب المخزن بدون مخزن لن يقدر يصرف أو يستلم مرتجع.' }}
+          </p>
         }
       </div>
     }

@@ -63,7 +63,7 @@
         <div formArrayName="items" class="space-y-4">
           @for (row of items.controls; track row; let i = $index) {
             <div [formGroupName]="i" class="grid gap-3 rounded-lg border border-stormy-teal-900 p-3 sm:grid-cols-12 sm:items-end">
-              <div class="sm:col-span-6">
+              <div [class]="canDiscount() ? 'sm:col-span-3' : 'sm:col-span-4'">
                 <label [for]="'product-' + i" class="form-label">الصنف</label>
                 <select [id]="'product-' + i" formControlName="productId" class="form-input">
                   <option value="" disabled>اختر الصنف</option>
@@ -78,9 +78,21 @@
                 <label [for]="'qty-' + i" class="form-label">الكمية</label>
                 <input [id]="'qty-' + i" type="number" min="1" step="1" inputmode="numeric" formControlName="quantity" class="form-input" dir="ltr" />
               </div>
-              <div class="text-sm sm:col-span-3">
+              <div class="sm:col-span-2">
+                <label [for]="'price-' + i" class="form-label">سعر البيع</label>
+                <input [id]="'price-' + i" type="number" min="0" step="0.01" inputmode="decimal" formControlName="unitPrice" class="form-input" dir="ltr"
+                  [placeholder]="lines()[i]?.product?.price ?? ''" />
+              </div>
+              @if (canDiscount()) {
+                <div class="sm:col-span-2">
+                  <label [for]="'disc-' + i" class="form-label">خصم %</label>
+                  <input [id]="'disc-' + i" type="number" min="0" [max]="maxDiscount()" step="0.5" inputmode="decimal" formControlName="discountPercent" class="form-input" dir="ltr"
+                    [placeholder]="customerDiscount()" [attr.aria-invalid]="(lines()[i]?.discount ?? 0) > maxDiscount()" />
+                </div>
+              }
+              <div [class]="canDiscount() ? 'text-sm sm:col-span-2' : 'text-sm sm:col-span-3'">
                 @if (lines()[i]?.product; as p) {
-                  <p class="text-stormy-teal">السعر: {{ p.price | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                  <p class="text-stormy-teal">سعر البيع: {{ lines()[i].price | currency: 'EGP' : 'symbol' : '1.0-2' }}{{ lines()[i].discount ? ' − ' + lines()[i].discount + '%' : '' }}</p>
                   <p class="font-semibold">الإجمالي: {{ lines()[i].total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
                 }
               </div>
@@ -140,6 +152,26 @@
             <dd class="text-lg font-bold text-vibrant-coral-400">{{ debtAfter() | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
           </div>
         </dl>
+        @if (discountTotal() > 0 || dueDate()) {
+          <p class="text-sm text-stormy-teal">
+            @if (discountTotal() > 0) {
+              الخصم: {{ discountTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}
+            }
+            @if (dueDate(); as d) {
+              {{ discountTotal() > 0 ? ' · ' : '' }}ميعاد استحقاق الباقي: {{ d | date: 'd MMM y' }}
+            }
+          </p>
+        }
+        @if (overdue() > 0 && isManager) {
+          <p class="rounded-lg bg-soft-apricot-800 px-3 py-2 text-sm text-soft-apricot-200" role="status">
+            العميل عليه متأخرات {{ overdue() | currency: 'EGP' : 'symbol' : '1.0-2' }}. المندوب مش هيقدر يبيعله آجل.
+          </p>
+        }
+        @if (overLimit() != null && isManager) {
+          <p class="rounded-lg bg-soft-apricot-800 px-3 py-2 text-sm text-soft-apricot-200" role="status">
+            المديونية بعد الفاتورة أكبر من حد الائتمان ({{ overLimit() | currency: 'EGP' : 'symbol' : '1.0-2' }}). مسموح للإدارة بس.
+          </p>
+        }
         @if (previousDebtPaid() > 0) {
           <p class="rounded-lg bg-yale-blue-900 px-3 py-2 text-sm text-yale-blue-500" role="status">
             الفاتورة مدفوعة بالكامل، و{{ previousDebtPaid() | currency: 'EGP' : 'symbol' : '1.0-2' }} تُخصم من المديونية السابقة.

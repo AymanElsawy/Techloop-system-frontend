@@ -16,12 +16,71 @@
       <div class="flex flex-wrap gap-3">
         @if (s.isActive) {
           <a routerLink="/inventory/receive" [queryParams]="{ supplierId: s.id }" class="btn-primary">وارد من المورد ده</a>
+          @if (s.debt > 0 && !paying()) {
+            <button type="button" class="btn-outline" (click)="startPay()">تسجيل سداد</button>
+          }
         }
         @if (!editing()) {
           <button type="button" class="btn-outline" (click)="startEdit(s)">تعديل</button>
         }
+        <app-share-link resource="suppliers" [id]="s.id" />
       </div>
     </div>
+
+    @if (s.debt > 0) {
+      <p role="note" class="card text-center text-sm">
+        مديونية الشركة عند المورد ده:
+        <span class="text-lg font-bold tabular-nums text-vibrant-coral-400">{{ s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+      </p>
+    }
+
+    @if (paying()) {
+      <form [formGroup]="payForm" (ngSubmit)="submitPayment()" novalidate class="card space-y-4">
+        <h2 class="font-semibold">تسجيل سداد للمورد</h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="pay-amount" class="form-label">المبلغ *</label>
+            <input id="pay-amount" type="number" min="0.01" step="0.01" inputmode="decimal" formControlName="amount" class="form-input" dir="ltr"
+              [attr.aria-invalid]="payExceedsDebt()" aria-describedby="pay-amount-error" />
+            @if (payExceedsDebt()) {
+              <p id="pay-amount-error" class="form-error" role="alert">المبلغ أكبر من مديونية المورد ({{ s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}).</p>
+            }
+          </div>
+          <div>
+            <label for="pay-method" class="form-label">طريقة السداد *</label>
+            <select id="pay-method" formControlName="paymentMethod" class="form-input">
+              <option value="" disabled>اختر طريقة السداد</option>
+              @for (m of methods; track m) {
+                <option [value]="m">{{ methodLabels[m] }}</option>
+              }
+            </select>
+          </div>
+          @if (payIsCheque()) {
+            <div>
+              <label for="pay-cheque-number" class="form-label">رقم الشيك</label>
+              <input id="pay-cheque-number" formControlName="chequeNumber" class="form-input" dir="ltr" autocomplete="off" />
+            </div>
+            <div>
+              <label for="pay-cheque-date" class="form-label">تاريخ استحقاق الشيك</label>
+              <input id="pay-cheque-date" type="date" formControlName="chequeDueDate" class="form-input" />
+            </div>
+          }
+          <div class="sm:col-span-2">
+            <label for="pay-notes" class="form-label">ملاحظات</label>
+            <input id="pay-notes" formControlName="notes" class="form-input" />
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" class="btn-primary" [disabled]="payForm.invalid || payExceedsDebt() || paySaving()">
+            {{ paySaving() ? 'جاري الحفظ...' : 'حفظ السداد' }}
+          </button>
+          <button type="button" class="btn-outline" (click)="paying.set(false)">إلغاء</button>
+        </div>
+        @if (payError(); as message) {
+          <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ message }}</p>
+        }
+      </form>
+    }
 
     @if (editing()) {
       <form [formGroup]="form" (ngSubmit)="saveEdit()" novalidate class="card space-y-4">
@@ -85,6 +144,10 @@
         <dt class="text-sm text-stormy-teal">آخر توريد</dt>
         <dd class="mt-1 font-semibold">{{ s.lastPurchaseAt ? (s.lastPurchaseAt | date: 'd MMMM y') : '—' }}</dd>
       </div>
+      <div>
+        <dt class="text-sm text-stormy-teal">المديونية الحالية</dt>
+        <dd class="mt-1 text-xl font-bold" [class.text-vibrant-coral-400]="s.debt > 0">{{ s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</dd>
+      </div>
       @if (s.notes) {
         <div class="sm:col-span-3">
           <dt class="text-sm text-stormy-teal">ملاحظات</dt>
@@ -108,6 +171,8 @@
                 <th scope="col" class="px-4 py-3 font-semibold">المخزن</th>
                 <th scope="col" class="px-4 py-3 font-semibold">الأصناف (الكمية × سعر الشراء)</th>
                 <th scope="col" class="px-4 py-3 font-semibold">الإجمالي</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الباقي</th>
+                <th scope="col" class="px-4 py-3 font-semibold"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-stormy-teal-900">
@@ -126,6 +191,73 @@
                     }
                   </td>
                   <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ receiptTotal(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold" [class.text-vibrant-coral-400]="receiptRemaining(m) > 0">
+                    {{ receiptRemaining(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3">
+                    <a [routerLink]="['/documents', 'PURCHASE', m.id]" class="text-vibrant-coral-400 hover:underline">التفاصيل</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="space-y-3">
+      <h2 class="text-lg font-bold">مدفوعات السداد</h2>
+      @if (payments.error()) {
+        <app-status-message type="error" message="حدث خطأ أثناء تحميل المدفوعات." (retry)="payments.reload()" />
+      } @else if (payments.hasValue() && !payments.value()!.length) {
+        <p class="card text-center text-sm text-stormy-teal">مفيش سداد للمورد ده لسه.</p>
+      } @else if (payments.hasValue()) {
+        <div class="card overflow-x-auto p-0">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">رقم</th>
+                <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المبلغ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">طريقة السداد</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الحالة</th>
+                <th scope="col" class="px-4 py-3 font-semibold"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (p of payments.value(); track p.id) {
+                <tr class="align-top">
+                  <td class="whitespace-nowrap px-4 py-3">#{{ p.number }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">{{ p.createdAt | date: 'd MMM y' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ p.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="px-4 py-3">{{ methodLabels[p.paymentMethod] }}</td>
+                  <td class="px-4 py-3">
+                    @if (p.status === 'CANCELLED') {
+                      <span class="rounded-full bg-alabaster-grey-400 px-3 py-1 text-xs font-medium text-alabaster-grey-100">ملغى</span>
+                    } @else {
+                      <span class="rounded-full bg-stormy-teal-900 px-3 py-1 text-xs font-medium text-stormy-teal">فعّال</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (p.status !== 'CANCELLED') {
+                      @if (cancellingId() === p.id) {
+                        <div class="space-y-2">
+                          <textarea rows="2" class="form-input" placeholder="سبب الإلغاء" [formControl]="cancelReason"></textarea>
+                          <div class="flex gap-2">
+                            <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="confirmCancel()">تأكيد</button>
+                            <button type="button" class="btn-outline" (click)="cancellingId.set(null)">تراجع</button>
+                          </div>
+                          @if (cancelError(); as message) {
+                            <p role="alert" class="text-xs text-vibrant-coral-300">{{ message }}</p>
+                          }
+                        </div>
+                      } @else {
+                        <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="startCancel(p.id)">إلغاء</button>
+                      }
+                    } @else if (p.cancelReason) {
+                      <p class="text-xs text-stormy-teal">السبب: {{ p.cancelReason }}</p>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>

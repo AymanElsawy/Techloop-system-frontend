@@ -47,4 +47,33 @@
       <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'جاري الحفظ...' : 'حفظ' }}</button>
     </form>
   }
+
+  @if (isOwner) {
+    <div class="card max-w-2xl space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-semibold">النسخ الاحتياطي</h2>
+          <p class="text-sm text-stormy-teal">نسخة كل يوم أوتوماتيك (قاعدة البيانات + المرفقات)، وبنحتفظ بآخر 14 نسخة. نزّل نسخة واحفظها بره السيرفر من وقت للتاني.</p>
+        </div>
+        <button type="button" class="btn-primary" [disabled]="backingUp()" (click)="backupNow()">{{ backingUp() ? 'جاري النسخ...' : 'نسخة الآن' }}</button>
+      </div>
+      @if (backupError(); as e) {
+        <p role="alert" class="rounded-lg bg-vibrant-coral-900 px-3 py-2 text-sm text-vibrant-coral-300">{{ e }}</p>
+      }
+      @if (backups.error()) {
+        <app-status-message type="error" message="حدث خطأ أثناء تحميل النسخ." (retry)="backups.reload()" />
+      } @else if (backups.value()?.length) {
+        <ul class="divide-y divide-stormy-teal-900">
+          @for (b of backups.value(); track b.name) {
+            <li class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+              <span>{{ b.createdAt | date: 'd MMM y, h:mm a' }} <span class="text-stormy-teal">· {{ b.size / 1048576 | number: '1.0-1' }} MB</span></span>
+              <button type="button" class="text-yale-blue-500 hover:underline" (click)="download(b)">تحميل</button>
+            </li>
+          }
+        </ul>
+      } @else if (backups.hasValue()) {
+        <p class="text-sm text-stormy-teal">لسه مفيش نسخ.</p>
+      }
+    </div>
+  }
 </section>

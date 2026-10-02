@@ -13,10 +13,10 @@ describe('auth guards', () => {
     TestBed.runInInjectionContext(() => guard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot));
 
   function loginAs(role: UserRole) {
-    TestBed.inject(AuthService).login({ email: 'a@b.co', password: 'Password123!' }).subscribe();
+    TestBed.inject(AuthService).login({ username: 'a', password: 'Password123!' }).subscribe();
     TestBed.inject(HttpTestingController)
       .expectOne((r) => r.url.endsWith('/auth/login'))
-      .flush({ success: true, data: { accessToken: 't', user: { id: '1', name: 'A', email: 'a@b.co', role } } });
+      .flush({ success: true, data: { accessToken: 't', user: { id: '1', name: 'A', username: 'a', role, mustChangePassword: false } } });
   }
 
   beforeEach(() => {

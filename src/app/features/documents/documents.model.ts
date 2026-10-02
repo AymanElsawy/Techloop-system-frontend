@@ -88,3 +88,10 @@ export function detailsLink(row: Pick<DocumentRow, 'type' | 'id'>): string[] | n
       return null; // movements have no page of their own; the print view is the details
   }
 }
+
+/** A daily backup archive (database + attachments). Owner only. */
+export interface Backup {
+  name: string;
+  size: number;
+  createdAt: string;
+}

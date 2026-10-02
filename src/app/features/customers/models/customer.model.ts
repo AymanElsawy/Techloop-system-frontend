@@ -103,6 +103,14 @@ export interface Customer {
   lastCollection: MoneyEvent | null;
   /** Collected by a rep, not handed to the treasury yet; not deducted from `debit` yet. */
   pendingPayments: number;
+  /** حد الائتمان: a rep can't sell past this debt; null = no limit. */
+  creditLimit: number | null;
+  /** مدة السداد: invoices are due this many days after the sale; null = no terms. */
+  paymentTermDays: number | null;
+  /** Default discount %, also the most a rep may give; null = none. */
+  discountPercent: number | null;
+  /** Details endpoint only: what's owed on invoices past their due date. */
+  overdue?: number;
 
   createdAt: string;
   updatedAt: string;
@@ -117,4 +125,11 @@ export interface CustomerFilters {
 export type CustomerInput = Pick<
   Customer,
   'name' | 'type' | 'phone' | 'contactPerson' | 'governorate' | 'city' | 'address' | 'location' | 'notes'
->;
+> &
+  Partial<Pick<Customer, 'creditLimit' | 'paymentTermDays' | 'discountPercent'>>;
+
+/** What a rep can still sell on credit before hitting the limit; null = no limit. */
+export function creditLeft(c: Pick<Customer, 'creditLimit' | 'debit' | 'pendingPayments'>): number | null {
+  if (c.creditLimit == null) return null;
+  return Math.round((c.creditLimit - Math.max(c.debit - c.pendingPayments, 0)) * 100) / 100;
+}

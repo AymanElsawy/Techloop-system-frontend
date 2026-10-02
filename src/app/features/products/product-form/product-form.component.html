@@ -22,11 +22,19 @@
 
       <div class="grid gap-5 sm:grid-cols-3">
         <div>
-          <label for="price" class="form-label">السعر (ج.م) *</label>
+          <label for="price" class="form-label">سعر البيع (ج.م) *</label>
           <input id="price" type="number" min="0" step="0.01" inputmode="decimal" formControlName="price" class="form-input" dir="ltr"
             [attr.aria-invalid]="form.controls.price.invalid && form.controls.price.touched" aria-describedby="price-error" />
           @if (form.controls.price.touched && form.controls.price.invalid) {
-            <p id="price-error" class="form-error">السعر مطلوب ولا يقل عن 0.</p>
+            <p id="price-error" class="form-error">سعر البيع مطلوب ولا يقل عن 0.</p>
+          }
+        </div>
+        <div>
+          <label for="last-cost" class="form-label">سعر الشراء (ج.م) *</label>
+          <input id="last-cost" type="number" min="0" step="0.01" inputmode="decimal" formControlName="lastCost" class="form-input" dir="ltr"
+            [attr.aria-invalid]="form.controls.lastCost.invalid && form.controls.lastCost.touched" aria-describedby="last-cost-error" />
+          @if (form.controls.lastCost.touched && form.controls.lastCost.invalid) {
+            <p id="last-cost-error" class="form-error">سعر الشراء مطلوب ولا يقل عن 0.</p>
           }
         </div>
         <div>
@@ -40,7 +48,47 @@
         </div>
       </div>
 
-      <app-supplier-picker [control]="form.controls.supplierId" />
+      <app-supplier-picker [control]="form.controls.supplierId" [required]="!id()" />
+
+      @if (!id()) {
+        <fieldset class="grid gap-5 border-t border-stormy-teal-900 pt-5 sm:grid-cols-2">
+          <legend class="sr-only">الوارد (أول كمية للصنف)</legend>
+          <p class="text-sm font-bold sm:col-span-2" aria-hidden="true">الوارد (أول كمية للصنف، بسعر الشراء)</p>
+          <div>
+            <label for="warehouse" class="form-label">المخزن *</label>
+            <select id="warehouse" formControlName="warehouseId" class="form-input">
+              <option value="" disabled>اختر المخزن</option>
+              @for (w of warehouses.value() ?? []; track w.id) {
+                <option [value]="w.id">{{ w.name }}</option>
+              }
+            </select>
+            @if (warehouses.error()) {
+              <p class="form-error">تعذر تحميل المخازن.</p>
+            }
+          </div>
+          <div>
+            <label for="quantity" class="form-label">الكمية *</label>
+            <input id="quantity" type="number" min="1" step="1" inputmode="numeric" formControlName="quantity" class="form-input" dir="ltr"
+              [attr.aria-invalid]="form.controls.quantity.invalid && form.controls.quantity.touched" aria-describedby="quantity-error" />
+            @if (form.controls.quantity.touched && form.controls.quantity.invalid) {
+              <p id="quantity-error" class="form-error">الكمية مطلوبة (رقم صحيح 1 أو أكثر).</p>
+            }
+          </div>
+          <div class="sm:col-span-2">
+            <label for="paid-amount" class="form-label">المدفوع الآن للمورد</label>
+            <input id="paid-amount" type="number" min="0" step="0.01" inputmode="decimal" formControlName="paidAmount" class="form-input" dir="ltr"
+              [placeholder]="'الإجمالي (' + (stockTotal() | currency: 'EGP' : 'symbol' : '1.0-2') + ') — سيب الحقل فاضي لو مدفوع بالكامل'" />
+            @if (remainingDebt() < 0) {
+              <p class="form-error" role="alert">المدفوع أكبر من إجمالي الوارد.</p>
+            } @else if (remainingDebt() > 0) {
+              <p class="mt-1 text-sm text-vibrant-coral-300">
+                الباقي دين على الشركة عند المورد:
+                <span class="font-bold tabular-nums">{{ remainingDebt() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+              </p>
+            }
+          </div>
+        </fieldset>
+      }
 
       <fieldset class="grid gap-5 border-t border-stormy-teal-900 pt-5 sm:grid-cols-2">
         <legend class="sr-only">بيانات إضافية</legend>
@@ -56,7 +104,7 @@
           <label for="min-quantity" class="form-label">حد التنبيه للكمية</label>
           <input id="min-quantity" type="number" min="0" step="1" inputmode="numeric" formControlName="minQuantity" class="form-input" dir="ltr"
             aria-describedby="min-quantity-hint" [attr.aria-invalid]="form.controls.minQuantity.invalid && form.controls.minQuantity.touched" />
-          <p id="min-quantity-hint" class="mt-1 text-xs text-stormy-teal">يظهر تنبيه "كمية منخفضة" لما إجمالي الكمية (كل المخازن والعُهد) يوصل للرقم ده. الكمية نفسها بتتسجل من المخزن (وارد).</p>
+          <p id="min-quantity-hint" class="mt-1 text-xs text-stormy-teal">يظهر تنبيه "كمية منخفضة" لما إجمالي الكمية (كل المخازن والعُهد) يوصل للرقم ده. </p>
         </div>
         <div>
           <label for="expiry" class="form-label">تاريخ الصلاحية</label>
@@ -74,7 +122,7 @@
         }
       </fieldset>
 
-      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || saving()">
+      <button type="submit" class="btn-primary w-full" [disabled]="form.invalid || remainingDebt() < 0 || saving()">
         {{ saving() ? 'جاري الحفظ...' : id() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
       </button>
 

@@ -77,8 +77,8 @@
             <th scope="col" class="px-4 py-3 font-semibold">الوحدة</th>
             <th scope="col" class="px-4 py-3 font-semibold">سعر البيع</th>
             @if (isManager) {
-              <th scope="col" class="px-4 py-3 font-semibold">متوسط الشراء</th>
-              <th scope="col" class="px-4 py-3 font-semibold">آخر شراء</th>
+              <th scope="col" class="px-4 py-3 font-semibold">سعر الشراء</th>
+              <th scope="col" class="px-4 py-3 font-semibold">متوسط سعر الشراء</th>
             }
             <th scope="col" class="px-4 py-3 font-semibold">الكمية الإجمالية</th>
             <th scope="col" class="px-4 py-3 font-semibold">تاريخ الصلاحية</th>
@@ -92,7 +92,11 @@
             <tr [class.opacity-60]="!p.isActive">
               <td class="px-4 py-3">
                 <p class="font-semibold">
-                  {{ p.name }}
+                  @if (isManager) {
+                    <a [routerLink]="['/inventory/products', p.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ p.name }}</a>
+                  } @else {
+                    {{ p.name }}
+                  }
                   @if (!p.isActive) {
                     <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
                   }
@@ -107,7 +111,6 @@
               <td class="px-4 py-3">{{ p.unit ? unitLabels[p.unit] : '—' }}</td>
               <td class="whitespace-nowrap px-4 py-3">{{ p.price | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
               @if (isManager) {
-                <td class="whitespace-nowrap px-4 py-3">{{ p.avgCost != null ? (p.avgCost | currency: 'EGP' : 'symbol' : '1.0-2') : '—' }}</td>
                 <td class="px-4 py-3">
                   @if (p.lastCost != null) {
                     <p class="whitespace-nowrap">{{ p.lastCost | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
@@ -121,6 +124,7 @@
                     —
                   }
                 </td>
+                <td class="whitespace-nowrap px-4 py-3">{{ p.avgCost != null ? (p.avgCost | currency: 'EGP' : 'symbol' : '1.0-2') : '—' }}</td>
               }
               <td class="whitespace-nowrap px-4 py-3">
                 <span class="font-semibold">{{ p.quantity }}</span>
@@ -144,11 +148,15 @@
                 }
               </td>
               @if (isManager) {
-                <td class="px-4 py-3">
-                  <a [routerLink]="['/inventory/products', p.id, 'edit']" class="me-3 text-sm font-medium text-vibrant-coral-400 hover:underline">تعديل</a>
-                  @if (p.isActive) {
-                    <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline">وارد</a>
-                  }
+                <td class="whitespace-nowrap px-4 py-3">
+                  <div class="flex flex-col items-start gap-1 text-sm font-medium">
+                    <a [routerLink]="['/inventory/products', p.id, 'edit']" class="text-vibrant-coral-400 hover:underline">تعديل</a>
+                    <a [routerLink]="['/inventory/products', p.id]" class="text-vibrant-coral-400 hover:underline">المشتريات</a>
+                    @if (p.isActive) {
+                      <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="text-vibrant-coral-400 hover:underline">وارد</a>
+                    }
+                    <button type="button" (click)="deleteProduct(p)" class="text-vibrant-coral-400 hover:underline">حذف</button>
+                  </div>
                 </td>
               }
             </tr>

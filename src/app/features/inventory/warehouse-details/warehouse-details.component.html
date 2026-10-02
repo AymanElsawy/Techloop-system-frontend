@@ -20,11 +20,17 @@
       </div>
       <div class="flex flex-wrap gap-3">
         @if (d.warehouse.isActive) {
-          <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RECEIVE }" class="btn-primary">وارد من مورد</a>
+          @if (isAdmin) {
+            <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RECEIVE }" class="btn-primary">وارد من مورد</a>
+          }
           <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE }" class="btn-accent">صرف لمندوب</a>
         }
         <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RETURN }" class="btn-outline">مرتجع من مندوب</a>
-        @if (!editing()) {
+        @if (isAdmin && d.warehouse.isActive) {
+          <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.TRANSFER }" class="btn-outline">تحويل لمخزن</a>
+          <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'count']" class="btn-outline">جرد</a>
+        }
+        @if (isAdmin && !editing()) {
           <button type="button" class="btn-outline" (click)="startEdit(d.warehouse)">تعديل</button>
         }
       </div>

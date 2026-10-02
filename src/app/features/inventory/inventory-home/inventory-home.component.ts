@@ -21,7 +21,9 @@ import { InventoryTabsComponent } from '../inventory-tabs/inventory-tabs.compone
 export class InventoryHomeComponent {
   private readonly inventory = inject(InventoryService);
 
-  protected readonly isManager = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
+  private readonly auth = inject(AuthService);
+  protected readonly isAdmin = this.auth.hasRole(UserRole.OWNER, UserRole.ADMIN);
+  protected readonly isManager = this.auth.hasRole(UserRole.OWNER, UserRole.ADMIN, UserRole.WAREHOUSE_REP);
   protected readonly unitLabels = PRODUCT_UNIT_LABELS;
   protected readonly totalQuantity = totalQuantity;
 

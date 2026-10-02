@@ -30,7 +30,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * Managers only.
- * - /inventory/warehouses/:id/move?type=RECEIVE|ISSUE|RETURN&repId=
+ * - /inventory/warehouses/:id/move?type=RECEIVE|ISSUE|RETURN|TRANSFER&repId=
  * - /inventory/receive?productId=&supplierId= (receipt, warehouse picked in the form)
  */
 @Component({
@@ -57,13 +57,19 @@ export class StockMoveFormComponent implements OnInit {
   protected readonly typeLabels = MOVEMENT_TYPE_LABELS;
   protected readonly unitLabels = PRODUCT_UNIT_LABELS;
   protected readonly isReceive = computed(() => this.kind() === MovementType.RECEIVE);
-  protected readonly needsRep = computed(() => !this.isReceive());
+  protected readonly isTransfer = computed(() => this.kind() === MovementType.TRANSFER);
+  protected readonly needsRep = computed(() => !this.isReceive() && !this.isTransfer());
+  /** ISSUE and TRANSFER take from the warehouse's main stock. */
+  private readonly fromMainStock = computed(() => this.kind() === MovementType.ISSUE || this.isTransfer());
 
   protected readonly form = this.fb.group({
     warehouseId: ['', Validators.required],
     supplierId: [''],
     repId: [''],
+    toWarehouseId: [''], // TRANSFER only
     items: this.fb.array([this.newItem()]),
+    /** RECEIVE only: what's actually paid now; empty = paid in full. The rest becomes supplier debt. */
+    paidAmount: [null as number | null, Validators.min(0)],
     notes: [''],
   });
   protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
@@ -96,8 +102,7 @@ export class StockMoveFormComponent implements OnInit {
     }
     const d = this.details.value();
     if (!d) return [];
-    const rows =
-      this.kind() === MovementType.ISSUE
+    const rows = this.fromMainStock()
         ? d.stock
         : (d.reps.find((r) => r.rep.id === this.value().repId)?.custody ?? []);
     return rows.map((r) => ({ id: r.product.id, name: r.product.name, unit: r.product.unit, available: r.quantity, lastCost: null }));
@@ -136,11 +141,19 @@ export class StockMoveFormComponent implements OnInit {
   protected readonly missingCost = computed(
     () => this.isReceive() && (this.value().items ?? []).some((i) => i.unitCost === null || i.unitCost === undefined || (i.unitCost as unknown) === ''),
   );
+  /** Receipt only: null/empty paid amount means paid in full. */
+  protected readonly paidAmount = computed(() => {
+    const raw = this.value().paidAmount;
+    return raw === null || raw === undefined || (raw as unknown) === '' ? this.grandTotal() : Number(raw);
+  });
+  protected readonly remainingDebt = computed(() => round2(this.grandTotal() - this.paidAmount()));
+  protected readonly paidAmountTooHigh = computed(() => this.isReceive() && this.paidAmount() > this.grandTotal());
 
   protected readonly canSubmit = computed(() => {
     const v = this.value();
-    if (this.hasLineError() || this.missingCost()) return false;
+    if (this.hasLineError() || this.missingCost() || this.paidAmountTooHigh()) return false;
     if (this.needsRep() && !v.repId) return false;
+    if (this.isTransfer() && (!v.toWarehouseId || v.toWarehouseId === v.warehouseId)) return false;
     if (this.isReceive() && !v.supplierId) return false;
     return true;
   });
@@ -214,12 +227,14 @@ export class StockMoveFormComponent implements OnInit {
     this.inventory
       .move(v.warehouseId, this.kind(), {
         ...(this.needsRep() && { repId: v.repId }),
+        ...(this.isTransfer() && { toWarehouseId: v.toWarehouseId }),
         ...(this.isReceive() && { supplierId: v.supplierId }),
         items: v.items.map((i) => ({
           productId: i.productId,
           quantity: Number(i.quantity),
           ...(this.isReceive() && { unitCost: Number(i.unitCost) }),
         })),
+        ...(this.isReceive() && v.paidAmount !== null && { paidAmount: Number(v.paidAmount) }),
         notes: v.notes.trim() || null,
       })
       .subscribe({

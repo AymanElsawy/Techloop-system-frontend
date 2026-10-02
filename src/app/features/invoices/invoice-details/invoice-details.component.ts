@@ -1,6 +1,7 @@
 import { DepositBadgeComponent } from '../../treasury/deposit-badge/deposit-badge.component';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -74,5 +75,10 @@ export class InvoiceDetailsComponent {
         this.cancelError.set(httpErrorMessage(err));
       },
     });
+  }
+
+  /** Only the remaining part of an invoice matters; the customer page shows the FIFO overdue total. */
+  protected isPastDue(dueDate: string): boolean {
+    return new Date(dueDate) < new Date();
   }
 }

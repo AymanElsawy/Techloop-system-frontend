@@ -23,7 +23,7 @@
         <thead class="table-head">
           <tr>
             <th scope="col" class="px-4 py-3 font-semibold">الاسم</th>
-            <th scope="col" class="px-4 py-3 font-semibold">البريد الإلكتروني</th>
+            <th scope="col" class="px-4 py-3 font-semibold">اسم الدخول</th>
             <th scope="col" class="px-4 py-3 font-semibold">الدور</th>
             <th scope="col" class="px-4 py-3 font-semibold">المنطقة</th>
             <th scope="col" class="px-4 py-3 font-semibold">المخزن</th>
@@ -36,7 +36,7 @@
           @for (user of users.value(); track user.id) {
             <tr>
               <td class="px-4 py-3 font-medium">{{ user.name }}</td>
-              <td class="px-4 py-3 text-right" dir="ltr">{{ user.email }}</td>
+              <td class="px-4 py-3 text-right" dir="ltr">{{ user.username }}</td>
               <td class="px-4 py-3">{{ roleLabels[user.role] }}</td>
               <td class="px-4 py-3">
                 @if (user.role !== UserRole.SALES_REP) {
@@ -48,7 +48,7 @@
                 }
               </td>
               <td class="px-4 py-3">
-                @if (user.role === UserRole.SALES_REP) {
+                @if (user.role === UserRole.SALES_REP || user.role === UserRole.WAREHOUSE_REP) {
                   <label class="sr-only" [for]="'wh-' + user.id">مخزن {{ user.name }}</label>
                   <select [id]="'wh-' + user.id" class="form-input h-9! min-w-36 text-xs" [value]="user.warehouse ?? ''" (change)="changeWarehouse(user, $event)">
                     <option value="">بدون مخزن</option>

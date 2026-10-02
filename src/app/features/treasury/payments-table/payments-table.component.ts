@@ -1,9 +1,10 @@
-import { Component, computed, input, model } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, computed, input, model, output } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
 
 import { PAYMENT_METHOD_LABELS } from '../../invoices/models/invoice.model';
-import { Payment } from '../models/treasury.model';
+import { ChequeStatus, Payment } from '../models/treasury.model';
 
 export const paymentKey = (p: Pick<Payment, 'kind' | 'id'>) => `${p.kind}:${p.id}`;
 
@@ -29,6 +30,9 @@ export const paymentKey = (p: Pick<Payment, 'kind' | 'id'>) => `${p.kind}:${p.id
             }
             <th scope="col" class="px-4 py-3 font-semibold">طريقة السداد</th>
             <th scope="col" class="px-4 py-3 font-semibold">المبلغ</th>
+            @if (chequeActions()) {
+              <th scope="col" class="px-4 py-3 font-semibold"><span class="sr-only">إجراء</span></th>
+            }
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
@@ -59,6 +63,14 @@ export const paymentKey = (p: Pick<Payment, 'kind' | 'id'>) => `${p.kind}:${p.id
                 }
               </td>
               <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ p.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+              @if (chequeActions()) {
+                <td class="whitespace-nowrap px-4 py-3">
+                  <div class="flex gap-2">
+                    <button type="button" class="btn-outline px-3 py-1 text-xs" (click)="chequeAction.emit({ payment: p, status: ChequeStatus.CLEARED })">اتصرف</button>
+                    <button type="button" class="btn-outline border-vibrant-coral-400 px-3 py-1 text-xs text-vibrant-coral-400" (click)="chequeAction.emit({ payment: p, status: ChequeStatus.BOUNCED })">مرتد</button>
+                  </div>
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -70,11 +82,15 @@ export class PaymentsTableComponent {
   readonly payments = input.required<Payment[]>();
   readonly selectable = input(false);
   readonly showRep = input(false);
+  /** Cheques in the treasury: "cashed" / "bounced" buttons per row. */
+  readonly chequeActions = input(false);
+  readonly chequeAction = output<{ payment: Payment; status: ChequeStatus }>();
   /** Selected entries as `KIND:id` keys. */
   readonly selected = model<string[]>([]);
 
   protected readonly methodLabels = PAYMENT_METHOD_LABELS;
   protected readonly key = paymentKey;
+  protected readonly ChequeStatus = ChequeStatus;
   protected readonly allSelected = computed(
     () => this.payments().length > 0 && this.selected().length === this.payments().length,
   );

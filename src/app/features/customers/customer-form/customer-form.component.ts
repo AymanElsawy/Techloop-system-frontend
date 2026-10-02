@@ -48,6 +48,9 @@ export class CustomerFormComponent implements OnInit {
     city: [''],
     address: [''],
     notes: [''],
+    creditLimit: ['', Validators.min(0)], // managers only; empty = no limit
+    paymentTermDays: ['', [Validators.min(0), Validators.max(365), Validators.pattern(/^\d*$/)]], // empty = no terms
+    discountPercent: ['', [Validators.min(0), Validators.max(100)]], // empty = none
   });
 
   protected readonly location = signal<GeoLocation | null>(null);
@@ -79,6 +82,9 @@ export class CustomerFormComponent implements OnInit {
           city: c.city ?? '',
           address: c.address ?? '',
           notes: c.notes ?? '',
+          creditLimit: c.creditLimit == null ? '' : String(c.creditLimit),
+          paymentTermDays: c.paymentTermDays == null ? '' : String(c.paymentTermDays),
+          discountPercent: c.discountPercent == null ? '' : String(c.discountPercent),
         });
         this.location.set(c.location);
         const ownPending = c.status === CustomerStatus.PENDING && c.createdBy.id === this.auth.currentUser()?.id;
@@ -111,9 +117,19 @@ export class CustomerFormComponent implements OnInit {
     this.saving.set(true);
     this.error.set(null);
 
-    const v = this.form.getRawValue();
+    const { creditLimit, paymentTermDays, discountPercent, ...v } = this.form.getRawValue();
+    const num = (x: string) => (x === '' || x === null ? null : Number(x));
     // Empty strings clear optional fields on the backend.
-    const all: CustomerInput = { ...v, governorate: v.governorate as Governorate, location: this.location() };
+    const all: CustomerInput = {
+      ...v,
+      governorate: v.governorate as Governorate,
+      location: this.location(),
+      ...(this.isManager && {
+        creditLimit: num(creditLimit),
+        paymentTermDays: num(paymentTermDays),
+        discountPercent: num(discountPercent),
+      }),
+    };
     const { name: _name, type: _type, governorate: _governorate, ...contact } = all;
     const data = this.contactOnly() ? contact : all;
     const id = this.id();

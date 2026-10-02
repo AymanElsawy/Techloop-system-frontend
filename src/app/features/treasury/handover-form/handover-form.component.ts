@@ -5,7 +5,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
-import { PAYMENT_METHOD_LABELS } from '../../invoices/models/invoice.model';
+import { PAYMENT_METHOD_LABELS, PaymentMethod } from '../../invoices/models/invoice.model';
 import { sumPayments, totalsByMethod } from '../models/treasury.model';
 import { TreasuryService } from '../services/treasury.service';
 import { PaymentsTableComponent, paymentKey } from '../payments-table/payments-table.component';
@@ -30,6 +30,26 @@ export class HandoverFormComponent {
   });
   protected readonly repName = computed(() => this.pending.value()?.[0]?.rep.name ?? '');
 
+  /** The rep's expenses not handed over yet; accepted ones come out of the cash received. */
+  protected readonly expenses = rxResource({
+    params: () => this.repId(),
+    stream: ({ params }) => this.treasury.getEntries({ repId: params, pending: true }),
+  });
+  protected readonly selectedExpenses = signal<string[]>([]);
+  protected readonly chosenExpenses = computed(() =>
+    (this.expenses.value() ?? []).filter((e) => this.selectedExpenses().includes(e.id)),
+  );
+  protected readonly spent = computed(() => sumPayments(this.chosenExpenses()));
+  protected readonly chosenCash = computed(() =>
+    sumPayments(this.chosen().filter((p) => p.paymentMethod === PaymentMethod.CASH)),
+  );
+  protected readonly netTotal = computed(() => Math.round((this.chosenTotal() - this.spent()) * 100) / 100);
+  protected readonly expensesTooHigh = computed(() => this.spent() > this.chosenCash());
+
+  protected toggleExpense(id: string): void {
+    this.selectedExpenses.update((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+  }
+
   /** Everything is selected by default; the manager unticks what was not handed over. */
   protected readonly selected = signal<string[]>([]);
   protected readonly chosen = computed(() =>
@@ -44,10 +64,11 @@ export class HandoverFormComponent {
 
   constructor() {
     effect(() => this.selected.set((this.pending.value() ?? []).map(paymentKey)));
+    effect(() => this.selectedExpenses.set((this.expenses.value() ?? []).map((e) => e.id)));
   }
 
   protected submit(): void {
-    if (!this.chosen().length || this.saving()) return;
+    if (!this.chosen().length || this.expensesTooHigh() || this.saving()) return;
     this.saving.set(true);
     this.error.set(null);
     const ids = (kind: string) => this.chosen().filter((p) => p.kind === kind).map((p) => p.id);
@@ -56,6 +77,7 @@ export class HandoverFormComponent {
         repId: this.repId(),
         invoiceIds: ids('INVOICE'),
         collectionIds: ids('COLLECTION'),
+        expenseIds: this.chosenExpenses().map((e) => e.id),
         notes: this.notes().trim() || null,
       })
       .subscribe({

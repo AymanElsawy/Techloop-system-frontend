@@ -20,6 +20,7 @@ export class AuthService {
 
   readonly currentUser = this.user.asReadonly();
   readonly isAuthenticated = computed(() => this.user() !== null);
+  readonly mustChangePassword = computed(() => !!this.user()?.mustChangePassword);
 
   login(credentials: LoginRequest): Observable<User> {
     return this.http.post<ApiResponse<LoginResponse>>(`${this.url}/login`, credentials).pipe(
@@ -28,6 +29,14 @@ export class AuthService {
         this.user.set(data.user);
       }),
       map(({ data }) => data.user),
+    );
+  }
+
+  /** First-login password change. */
+  changePassword(password: string): Observable<User> {
+    return this.http.post<ApiResponse<User>>(`${this.url}/change-password`, { password }).pipe(
+      map(({ data }) => data),
+      tap((user) => this.user.set(user)),
     );
   }
 

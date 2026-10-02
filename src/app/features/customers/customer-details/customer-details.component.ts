@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '../../../shared/date.pipe';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -9,12 +10,14 @@ import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { ShareLinkComponent } from '../../../shared/components/share-link/share-link.component';
 import {
   CUSTOMER_STATUS_CLASSES,
   CUSTOMER_STATUS_LABELS,
   CUSTOMER_TYPE_LABELS,
   Customer,
   CustomerStatus,
+  creditLeft,
 } from '../models/customer.model';
 import { CustomerService } from '../services/customer.service';
 import { InvoiceService } from '../../invoices/services/invoice.service';
@@ -35,7 +38,7 @@ const LINE_LABELS: Record<StatementLine['kind'], string> = {
 
 @Component({
   selector: 'app-customer-details',
-  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, ShareLinkComponent, StatusMessageComponent],
   templateUrl: './customer-details.component.html',
 })
 export class CustomerDetailsComponent {
@@ -56,6 +59,7 @@ export class CustomerDetailsComponent {
 
   protected readonly isManager = this.auth.hasRole(UserRole.OWNER, UserRole.ADMIN);
   protected readonly lineLabels = LINE_LABELS;
+  protected readonly creditLeft = creditLeft;
 
   protected readonly customer = rxResource({
     params: () => this.id(),
