@@ -7,7 +7,9 @@ import { debounceTime } from 'rxjs';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import {
   CUSTOMER_STATUS_CLASSES,
   CUSTOMER_STATUS_LABELS,
@@ -20,7 +22,7 @@ import { CustomerService } from '../services/customer.service';
 
 @Component({
   selector: 'app-customer-list',
-  imports: [CurrencyPipe, DatePipe, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, PagerComponent, RouterLink, StatusMessageComponent],
   templateUrl: './customer-list.component.html',
 })
 export class CustomerListComponent {
@@ -45,19 +47,19 @@ export class CustomerListComponent {
 
   protected readonly hasFilters = computed(() => !!(this.governorate() || this.status() || this.search()));
 
-  protected readonly customers = rxResource({
-    params: (): CustomerFilters => ({
+  protected readonly customers = pagedResource(
+    (): CustomerFilters => ({
       ...(this.governorate() && { governorate: this.governorate() as Governorate }),
       ...(this.status() && { status: this.status() as CustomerStatus }),
       ...(this.debouncedSearch().trim() && { search: this.debouncedSearch().trim() }),
     }),
-    stream: ({ params }) => this.customerService.getCustomers(params),
-  });
+    (params) => this.customerService.getCustomersPage(params),
+  );
 
   /** Pending-approval count for the managers' shortcut. */
   protected readonly pending = rxResource({
     params: () => this.isManager || undefined,
-    stream: () => this.customerService.getCustomers({ status: CustomerStatus.PENDING }),
+    stream: () => this.customerService.getCustomersPage({ status: CustomerStatus.PENDING, page: 1, limit: 1 }),
   });
 
   /** Row click; the name stays a real link for keyboard and screen-reader users. */

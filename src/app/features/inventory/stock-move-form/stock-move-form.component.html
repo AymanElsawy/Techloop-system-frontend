@@ -70,7 +70,7 @@
           <p class="text-sm text-stormy-teal">{{ !needsRep() ? 'المخزن فارغ.' : 'لا توجد بضاعة في عهدة هذا المندوب.' }}</p>
         }
         @if (isReceive() && products.hasValue() && !options().length) {
-          <p class="text-sm text-stormy-teal">لا توجد أصناف نشطة. <a routerLink="/inventory/products/new" class="font-semibold text-vibrant-coral-400 hover:underline">أضف صنف</a></p>
+          <p class="text-sm text-stormy-teal">لا توجد أصناف نشطة. <a routerLink="/inventory/products/new" class="font-semibold text-stormy-teal hover:underline">أضف صنف</a></p>
         }
         <div formArrayName="items" class="space-y-3">
           @for (row of items.controls; track row; let i = $index) {
@@ -103,7 +103,7 @@
               }
               <div class="sm:col-span-1">
                 @if (items.length > 1) {
-                  <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="removeItem(i)"
+                  <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="removeItem(i)"
                     [attr.aria-label]="'حذف السطر ' + (i + 1)">حذف</button>
                 }
               </div>

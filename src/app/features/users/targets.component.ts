@@ -2,10 +2,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
 
 import { httpErrorMessage } from '../../core/http/http-error';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../shared/paged';
 import { TargetPeriod, TargetRow, UserService } from './user.service';
 
 const thisMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7); // YYYY-MM
@@ -13,7 +16,7 @@ const thisMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7); // Y
 /** التارجت والعمولات: each rep's monthly / yearly targets, progress and commission (managers only). */
 @Component({
   selector: 'app-targets',
-  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, PagerComponent, ReactiveFormsModule, RouterLink, StatusMessageComponent],
   templateUrl: './targets.component.html',
 })
 export class TargetsComponent {
@@ -27,12 +30,13 @@ export class TargetsComponent {
   protected readonly period = computed<TargetPeriod>(() =>
     this.yearly() ? { year: this.year() } : { month: this.month() },
   );
-  protected readonly report = rxResource({
-    params: () => this.period(),
-    stream: ({ params }) => this.userService.getTargets(params),
-  });
-  protected readonly totalCommission = computed(() =>
-    (this.report.value()?.reps ?? []).reduce((s, r) => s + r.commission, 0),
+  /** Rep name. */
+  protected readonly search = signal('');
+  private readonly debouncedSearch = toSignal(toObservable(this.search).pipe(debounceTime(300)), { initialValue: '' });
+  /** `sum` = total commission of every matching rep, across pages. */
+  protected readonly report = pagedResource(
+    () => ({ ...this.period(), ...(this.debouncedSearch().trim() && { search: this.debouncedSearch().trim() }) }),
+    (params) => this.userService.getTargetsPage(params),
   );
 
   protected readonly editingId = signal<string | null>(null);
@@ -89,7 +93,7 @@ export class TargetsComponent {
           this.saving.set(false);
           this.editingId.set(null);
           this.feedback.set({ ok: true, message: `تم حفظ تارجت ${rep.name}.` });
-          this.report.reload();
+          this.report.resource.reload();
         },
         error: (err: unknown) => {
           this.saving.set(false);

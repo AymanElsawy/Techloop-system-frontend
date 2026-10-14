@@ -23,19 +23,12 @@
     </div>
   } @else if (debt() <= 0) {
     <p role="note" class="card text-center text-sm">
-      @if (pendingPayments() > 0) {
-        كل مديونية العميل اتحصّلت، ومنها {{ pendingPayments() | currency: 'EGP' : 'symbol' : '1.0-2' }} مع المندوب لسه متسلمتش للخزنة.
-      } @else {
-        لا توجد مديونية على هذا العميل.
-      }
+      لا توجد مديونية على هذا العميل.
     </p>
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-6">
       @if (!isManager) {
-        <p class="text-sm text-stormy-teal">المبلغ يفضل في خزنتك لحد ما تسلّمه للإدارة، ووقتها يتخصم من مديونية العميل.</p>
-      }
-      @if (pendingPayments() > 0) {
-        <p class="text-xs text-stormy-teal">فيه {{ pendingPayments() | currency: 'EGP' : 'symbol' : '1.0-2' }} محصّلة ولسه متسلمتش، ومش محسوبة في المديونية المتاحة.</p>
+        <p class="text-sm text-stormy-teal">المبلغ بيتخصم من مديونية العميل على طول، ويفضل في خزنتك لحد ما تسلّمه للإدارة.</p>
       }
       <dl class="card grid grid-cols-2 gap-3 text-center">
         <div>
@@ -60,7 +53,7 @@
             <label for="amount" class="form-label">المبلغ المحصّل *</label>
             <input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" formControlName="amount" class="form-input" dir="ltr"
               [attr.aria-invalid]="exceedsDebt() || (form.controls.amount.invalid && form.controls.amount.touched)" aria-describedby="amount-error" />
-            <button type="button" class="mt-1 text-xs text-vibrant-coral-400 hover:underline" (click)="fillFullDebt()">تحصيل كامل المديونية</button>
+            <button type="button" class="mt-1 text-xs text-stormy-teal hover:underline" (click)="fillFullDebt()">تحصيل كامل المديونية</button>
             @if (exceedsDebt()) {
               <p id="amount-error" class="form-error" role="alert">المبلغ أكبر من المديونية الحالية.</p>
             } @else if (form.controls.amount.touched && form.controls.amount.invalid) {

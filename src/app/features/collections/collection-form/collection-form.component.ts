@@ -45,12 +45,7 @@ export class CollectionFormComponent {
     params: () => this.id(),
     stream: ({ params }) => this.customerService.getCustomer(params),
   });
-  /** Debt minus money already collected but not handed to the treasury (same rule as the backend). */
-  protected readonly debt = computed(() => {
-    const c = this.customer.value();
-    return c ? Math.max(round2(c.debit - c.pendingPayments), 0) : 0;
-  });
-  protected readonly pendingPayments = computed(() => this.customer.value()?.pendingPayments ?? 0);
+  protected readonly debt = computed(() => this.customer.value()?.debit ?? 0);
   protected readonly isManager = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
 
   protected readonly form = inject(NonNullableFormBuilder).group({

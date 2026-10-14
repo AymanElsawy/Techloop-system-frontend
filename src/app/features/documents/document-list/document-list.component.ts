@@ -2,12 +2,14 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
-import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import {
   DOCUMENT_TYPE_CLASSES,
   DOCUMENT_TYPE_LABELS,
@@ -21,7 +23,7 @@ import { DocumentsService } from '../documents.service';
 /** /documents — every printable document: sales, collections, purchases, custody moves, handovers. */
 @Component({
   selector: 'app-document-list',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, PagerComponent, RouterLink, StatusMessageComponent],
   templateUrl: './document-list.component.html',
 })
 export class DocumentListComponent {
@@ -41,20 +43,17 @@ export class DocumentListComponent {
   protected readonly search = signal('');
   private readonly debouncedSearch = toSignal(toObservable(this.search).pipe(debounceTime(300)), { initialValue: '' });
 
-  protected readonly list = rxResource({
-    params: (): DocumentFilters => ({
+  protected readonly list = pagedResource(
+    (): DocumentFilters => ({
       ...(this.type() && { type: this.type() as DocumentType }),
       ...(this.from() && { from: this.from() }),
       ...(this.to() && { to: this.to() }),
       ...(this.debouncedSearch().trim() && { search: this.debouncedSearch().trim() }),
     }),
-    stream: ({ params }) => this.documents.getDocuments(params),
-  });
+    (params) => this.documents.getDocumentsPage(params),
+  );
 
   protected readonly hasFilters = computed(() => !!(this.type() || this.from() || this.to() || this.search()));
-  protected readonly total = computed(() =>
-    (this.list.value() ?? []).filter((d) => d.status === 'ACTIVE').reduce((s, d) => s + (d.amount ?? 0), 0),
-  );
 
   protected value(event: Event): string {
     return (event.target as HTMLInputElement | HTMLSelectElement).value;

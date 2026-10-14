@@ -37,13 +37,16 @@
     }
   </div>
 
-  @if (list.isLoading() && !list.hasValue()) {
-    <app-status-message type="loading" message="جاري تحميل الفواتير..." />
-  } @else if (list.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل الفواتير." (retry)="list.reload()" />
+  @if (list.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الفواتير." (retry)="list.resource.reload()" />
   } @else if (list.value(); as docs) {
-    @if (docs.length) {
-      <div class="card overflow-x-auto p-0">
+    @if (docs.total) {
+      @if (type() && docs.sum) {
+        <p class="text-sm text-stormy-teal">
+          الإجمالي (بدون الملغي): <span class="font-bold">{{ docs.sum | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+        </p>
+      }
+      <app-pager [(page)]="list.page" [(limit)]="list.limit" [total]="docs.total" [loading]="list.resource.isLoading()">
         <table class="w-full text-sm">
           <thead class="table-head">
             <tr>
@@ -57,7 +60,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-stormy-teal-900">
-            @for (d of docs; track d.type + d.id) {
+            @for (d of docs.items; track d.type + d.id) {
               <tr [class.opacity-60]="d.status === 'CANCELLED'">
                 <td class="px-4 py-3">
                   <span class="rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap {{ typeClasses[d.type] }}">{{ typeLabels[d.type] }}</span>
@@ -90,15 +93,13 @@
             }
           </tbody>
         </table>
-      </div>
-      <p class="text-sm text-stormy-teal">
-        {{ docs.length }} مستند
-        @if (type() && total()) {
-          · الإجمالي (بدون الملغي): <span class="font-bold">{{ total() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
-        }
-      </p>
+      </app-pager>
+    } @else if (list.resource.isLoading()) {
+      <app-status-message type="loading" message="جاري تحميل الفواتير..." />
     } @else {
       <app-status-message type="empty" [message]="hasFilters() ? 'مفيش مستندات مطابقة للفلاتر.' : 'مفيش مستندات لسه.'" />
     }
+  } @else {
+    <app-status-message type="loading" message="جاري تحميل الفواتير..." />
   }
 </section>

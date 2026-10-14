@@ -6,7 +6,9 @@ import { of } from 'rxjs';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import { MOVEMENT_TYPE_CLASSES, MOVEMENT_TYPE_LABELS, MovementType } from '../models/inventory.model';
 import { InventoryService } from '../services/inventory.service';
 import { InventoryTabsComponent } from '../inventory-tabs/inventory-tabs.component';
@@ -14,7 +16,7 @@ import { InventoryTabsComponent } from '../inventory-tabs/inventory-tabs.compone
 /** /inventory/movements — stock log. Reps only get their own custody movements (backend rule). */
 @Component({
   selector: 'app-movement-list',
-  imports: [DatePipe, InventoryTabsComponent, RouterLink, StatusMessageComponent],
+  imports: [DatePipe, InventoryTabsComponent, PagerComponent, RouterLink, StatusMessageComponent],
   templateUrl: './movement-list.component.html',
 })
 export class MovementListComponent {
@@ -44,17 +46,17 @@ export class MovementListComponent {
   protected readonly warehouses = rxResource({
     stream: () => (this.isManager ? this.inventory.getWarehouses() : of([])),
   });
-  protected readonly movements = rxResource({
-    params: () => ({
+  protected readonly movements = pagedResource(
+    () => ({
       ...(this.warehouse() && { warehouseId: this.warehouse() }),
       ...(this.rep() && { repId: this.rep() }),
       ...(this.type() && { type: this.type() as MovementType }),
     }),
-    stream: ({ params }) => this.inventory.getMovements(params),
-  });
+    (params) => this.inventory.getMovementsPage(params),
+  );
 
   /** Name of the rep filter, taken from the loaded rows. */
-  protected readonly repName = computed(() => this.movements.value()?.find((m) => m.rep)?.rep?.name ?? '');
+  protected readonly repName = computed(() => this.movements.value()?.items.find((m) => m.rep)?.rep?.name ?? '');
   protected readonly hasFilters = computed(() => !!(this.warehouse() || this.rep() || this.type()));
 
   protected selectValue(event: Event): string {

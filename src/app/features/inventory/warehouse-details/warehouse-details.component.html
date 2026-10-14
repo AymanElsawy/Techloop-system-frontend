@@ -23,7 +23,7 @@
           @if (isAdmin) {
             <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RECEIVE }" class="btn-primary">وارد من مورد</a>
           }
-          <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE }" class="btn-accent">صرف لمندوب</a>
+          <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE }" class="btn-primary">صرف لمندوب</a>
         }
         <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RETURN }" class="btn-outline">مرتجع من مندوب</a>
         @if (isAdmin && d.warehouse.isActive) {
@@ -118,10 +118,10 @@
               </div>
               <div class="flex gap-3 text-sm font-semibold">
                 @if (d.warehouse.isActive) {
-                  <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE, repId: r.rep.id }" class="text-vibrant-coral-400 hover:underline">صرف</a>
+                  <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE, repId: r.rep.id }" class="text-stormy-teal hover:underline">صرف</a>
                 }
                 @if (r.custody.length) {
-                  <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RETURN, repId: r.rep.id }" class="text-vibrant-coral-400 hover:underline">مرتجع</a>
+                  <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RETURN, repId: r.rep.id }" class="text-stormy-teal hover:underline">مرتجع</a>
                 }
                 <a routerLink="/inventory/movements" [queryParams]="{ repId: r.rep.id }" class="text-stormy-teal hover:underline">الحركات</a>
               </div>
@@ -143,7 +143,7 @@
       </div>
     </div>
 
-    <a routerLink="/inventory/movements" [queryParams]="{ warehouseId: d.warehouse.id }" class="inline-block text-sm font-semibold text-vibrant-coral-400 hover:underline">
+    <a routerLink="/inventory/movements" [queryParams]="{ warehouseId: d.warehouse.id }" class="inline-block text-sm font-semibold text-stormy-teal hover:underline">
       عرض سجل حركات هذا المخزن
     </a>
   }

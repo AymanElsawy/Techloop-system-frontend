@@ -1,9 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
 
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import {
   VISIT_PURPOSE_LABELS,
   VISIT_STATUS_CLASSES,
@@ -40,7 +41,7 @@ function periodRange(period: Period): Pick<VisitFilters, 'from' | 'to'> {
 
 @Component({
   selector: 'app-visit-list',
-  imports: [DatePipe, RouterLink, StatusMessageComponent],
+  imports: [DatePipe, PagerComponent, RouterLink, StatusMessageComponent],
   templateUrl: './visit-list.component.html',
 })
 export class VisitListComponent {
@@ -56,13 +57,13 @@ export class VisitListComponent {
   protected readonly status = signal<VisitStatus | ''>('');
   protected readonly emptyMessage = computed(() => EMPTY_MESSAGES[this.period()]);
 
-  protected readonly visits = rxResource({
-    params: (): VisitFilters => ({
+  protected readonly visits = pagedResource(
+    (): VisitFilters => ({
       ...periodRange(this.period()),
       ...(this.status() && { status: this.status() as VisitStatus }),
     }),
-    stream: ({ params }) => this.visitService.getVisits(params),
-  });
+    (params) => this.visitService.getVisitsPage(params),
+  );
 
   protected onStatusChange(event: Event): void {
     this.status.set((event.target as HTMLSelectElement).value as VisitStatus | '');

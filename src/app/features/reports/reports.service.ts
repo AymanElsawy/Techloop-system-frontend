@@ -65,6 +65,83 @@ export interface PurchasesReport {
 
 export type SalesQuery = { groupBy: GroupBy; from: string; to: string };
 
+export type PartyKind = 'customers' | 'suppliers';
+
+/** One document in a customer / supplier report, oldest first. */
+export interface ReportLine {
+  kind: 'invoice' | 'return' | 'collection' | 'receipt' | 'payment';
+  id: string;
+  number: string;
+  date: string;
+  /** Customer: the sale. Supplier: the purchase. */
+  debit: number;
+  /** Customer: paid, collected or returned. Supplier: what the company paid. */
+  credit: number;
+  /** Payment method; null on an invoice = deferred. */
+  method: string | null;
+  /** Bounced cheque: listed, not counted as paid. */
+  bounced: boolean;
+  /** Paid, but the money is still with the rep (already deducted from the balance). */
+  pending: boolean;
+  /** Running balance after this line, like كشف الحساب. */
+  balance: number;
+}
+
+export interface CustomersReport {
+  from: string;
+  to: string;
+  rows: {
+    customer: { id: string; name: string; governorate: string };
+    invoices: number;
+    sales: number;
+    returns: number;
+    net: number;
+    profit: number;
+    collected: number;
+    /** Today's balance: positive = the customer owes. */
+    balance: number;
+  }[];
+  totals: { invoices: number; sales: number; returns: number; net: number; profit: number; collected: number; balance: number };
+}
+
+export interface CustomerReport {
+  from: string;
+  to: string;
+  customer: { id: string; name: string; governorate: string; phone: string | null; balance: number };
+  /** Balance before `from` / after `to` (positive = the customer owes). */
+  opening: number;
+  closing: number;
+  totals: { invoices: number; sales: number; returns: number; net: number; cost: number; profit: number; collected: number };
+  products: SalesRow[];
+  lines: ReportLine[];
+}
+
+export interface SuppliersReport {
+  from: string;
+  to: string;
+  rows: {
+    supplier: { id: string; name: string; phone: string | null };
+    receipts: number;
+    purchases: number;
+    paid: number;
+    /** Today's debt: what the company owes. */
+    debt: number;
+  }[];
+  totals: { receipts: number; purchases: number; paid: number; debt: number };
+}
+
+export interface SupplierReport {
+  from: string;
+  to: string;
+  supplier: { id: string; name: string; phone: string | null; debt: number };
+  /** Debt before `from` / after `to` (what we owe). */
+  opening: number;
+  closing: number;
+  totals: { receipts: number; purchases: number; paid: number };
+  products: PurchasesReport['rows'];
+  lines: ReportLine[];
+}
+
 /** Managers only. `format=csv` gives the same report as an Excel-ready file. */
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
@@ -88,13 +165,21 @@ export class ReportsService {
       .pipe(map(({ data }) => data));
   }
 
+  /** All customers / suppliers, or one of them (`id`), in [from, to] (empty = this month). */
+  getParty<T>(path: string, from: string, to: string): Observable<T> {
+    return this.http
+      .get<ApiResponse<T>>(`${this.url}/${path}`, { params: this.dates(from, to) })
+      .pipe(map(({ data }) => data));
+  }
+
   dates(from: string, to: string): Record<string, string> {
     return { ...(from && { from }), ...(to && { to }) };
   }
 
   /** Downloads the report as a CSV file (opens in Excel). */
   download(
-    report: 'sales' | 'aging' | 'purchases',
+    /** sales | aging | purchases | customers[/id] | suppliers[/id] */
+    report: string,
     filename: string,
     q: Partial<SalesQuery> = {},
   ): Observable<void> {

@@ -56,14 +56,10 @@
     </select>
   </div>
 
-  @if (suppliers.isLoading() && !suppliers.hasValue()) {
-    <app-status-message type="loading" message="جاري تحميل الموردين..." />
-  } @else if (suppliers.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل الموردين." (retry)="suppliers.reload()" />
-  } @else if (!suppliers.value()?.length) {
-    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد موردين مطابقين.' : 'لا يوجد موردين بعد. أضف أول مورد، أو من فورم الوارد مباشرة.'" />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  @if (suppliers.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الموردين." (retry)="suppliers.resource.reload()" />
+  } @else if (suppliers.value()?.total) {
+    <app-pager [(page)]="suppliers.page" [(limit)]="suppliers.limit" [total]="suppliers.value()!.total" [loading]="suppliers.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -76,10 +72,10 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (s of suppliers.value(); track s.id) {
+          @for (s of suppliers.value()!.items; track s.id) {
             <tr [class.opacity-60]="!s.isActive">
               <td class="px-4 py-3">
-                <a [routerLink]="['/suppliers', s.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">{{ s.name }}</a>
+                <a [routerLink]="['/suppliers', s.id]" class="font-semibold hover:text-stormy-teal hover:underline">{{ s.name }}</a>
                 @if (!s.isActive) {
                   <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
                 }
@@ -96,6 +92,10 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-pager>
+  } @else if (suppliers.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل الموردين..." />
+  } @else {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد موردين مطابقين.' : 'لا يوجد موردين بعد. أضف أول مورد، أو من فورم الوارد مباشرة.'" />
   }
 </section>

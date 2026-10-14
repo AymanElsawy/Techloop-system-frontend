@@ -7,19 +7,23 @@ import { of } from 'rxjs';
 import { httpErrorMessage } from '../../core/http/http-error';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
 import { GROUP_LABELS, GroupBy, ReportsService, SalesRow } from './reports.service';
+import { PartyReportsComponent } from './party-reports.component';
 
 const isoDay = (d: Date) => d.toLocaleDateString('en-CA');
 
-/** /reports — managers: sales by product / governorate / rep with profit, debt aging, and purchases per supplier. All export to Excel (CSV). */
+/**
+ * /reports — managers: sales by product / governorate / rep with profit, debt aging, purchases per supplier,
+ * and customers / suppliers (all, or one in detail). All export to Excel (CSV).
+ */
 @Component({
   selector: 'app-reports',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, PercentPipe, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, PartyReportsComponent, PercentPipe, RouterLink, StatusMessageComponent],
   templateUrl: './reports.component.html',
 })
 export class ReportsComponent {
   private readonly reports = inject(ReportsService);
 
-  protected readonly tab = signal<'sales' | 'aging' | 'purchases'>('sales');
+  protected readonly tab = signal<'sales' | 'aging' | 'purchases' | 'customers' | 'suppliers'>('sales');
   protected readonly groupLabels = GROUP_LABELS;
   protected readonly groups = Object.keys(GROUP_LABELS) as GroupBy[];
 

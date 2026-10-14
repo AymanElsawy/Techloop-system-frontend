@@ -28,15 +28,12 @@
     </select>
   </div>
 
-  @if (visits.isLoading()) {
-    <app-status-message type="loading" message="جاري تحميل الزيارات..." />
-  } @else if (visits.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل الزيارات." (retry)="visits.reload()" />
-  } @else if (!visits.value()?.length) {
-    <app-status-message type="empty" [message]="emptyMessage()" />
-  } @else {
-    <ul class="card divide-y divide-stormy-teal-900 p-0">
-      @for (visit of visits.value(); track visit.id) {
+  @if (visits.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الزيارات." (retry)="visits.resource.reload()" />
+  } @else if (visits.value()?.total) {
+    <app-pager [(page)]="visits.page" [(limit)]="visits.limit" [total]="visits.value()!.total" [loading]="visits.resource.isLoading()">
+    <ul class="divide-y divide-stormy-teal-900">
+      @for (visit of visits.value()!.items; track visit.id) {
         <li>
           <a
             [routerLink]="['/visits', visit.id]"
@@ -57,5 +54,10 @@
         </li>
       }
     </ul>
+    </app-pager>
+  } @else if (visits.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل الزيارات..." />
+  } @else {
+    <app-status-message type="empty" [message]="emptyMessage()" />
   }
 </section>

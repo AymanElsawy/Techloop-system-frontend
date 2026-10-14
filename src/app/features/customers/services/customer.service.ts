@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
+import { getPage } from '../../../shared/paged';
 import { Customer, CustomerFilters, CustomerInput } from '../models/customer.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +16,10 @@ export class CustomerService {
     const params = new HttpParams({ fromObject: { ...filters } });
     return this.http.get<ApiResponse<Customer[]>>(this.url, { params }).pipe(map(({ data }) => data));
   }
+  getCustomersPage(query: CustomerFilters & PageParams): Observable<Page<Customer>> {
+    return getPage(this.http, this.url, query);
+  }
+
 
   getCustomer(id: string): Observable<Customer> {
     return this.http.get<ApiResponse<Customer>>(`${this.url}/${id}`).pipe(map(({ data }) => data));

@@ -23,18 +23,14 @@
       <span class="rounded-full bg-stormy-teal-900 px-3 py-1.5 text-sm">المندوب: {{ repName() || '…' }}</span>
     }
     @if (hasFilters()) {
-      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+      <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
     }
   </div>
 
-  @if (movements.isLoading() && !movements.hasValue()) {
-    <app-status-message type="loading" message="جاري تحميل الحركات..." />
-  } @else if (movements.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل الحركات." (retry)="movements.reload()" />
-  } @else if (!movements.value()?.length) {
-    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد حركات مطابقة.' : 'لا توجد حركات بعد.'" />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  @if (movements.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الحركات." (retry)="movements.resource.reload()" />
+  } @else if (movements.value()?.total) {
+    <app-pager [(page)]="movements.page" [(limit)]="movements.limit" [total]="movements.value()!.total" [loading]="movements.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -47,19 +43,19 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (m of movements.value(); track m.id) {
+          @for (m of movements.value()!.items; track m.id) {
             <tr class="align-top">
               <td class="whitespace-nowrap px-4 py-3">{{ m.createdAt | date: 'd MMM y, h:mm a' }}</td>
               <td class="px-4 py-3">
                 <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium" [class]="typeClasses[m.type]">{{ typeLabels[m.type] }}</span>
                 @if (m.invoice) {
-                  <a [routerLink]="['/invoices', m.invoice.id]" class="mt-1 block text-xs text-vibrant-coral-400 hover:underline" dir="ltr">{{ m.invoice.invoiceNumber }}</a>
+                  <a [routerLink]="['/invoices', m.invoice.id]" class="mt-1 block text-xs text-stormy-teal hover:underline" dir="ltr">{{ m.invoice.invoiceNumber }}</a>
                 }
               </td>
               <td class="px-4 py-3">
                 <p>{{ m.warehouse?.name ?? '—' }}{{ m.toWarehouse ? ' ← ' + m.toWarehouse.name : '' }}</p>
                 @if (m.supplier) {
-                  <a [routerLink]="['/suppliers', m.supplier.id]" class="text-xs text-vibrant-coral-400 hover:underline">المورد: {{ m.supplier.name }}</a>
+                  <a [routerLink]="['/suppliers', m.supplier.id]" class="text-xs text-stormy-teal hover:underline">المورد: {{ m.supplier.name }}</a>
                 }
                 @if (m.rep) {
                   <p class="text-xs text-stormy-teal">{{ m.rep.name }}</p>
@@ -97,6 +93,10 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-pager>
+  } @else if (movements.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل الحركات..." />
+  } @else {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد حركات مطابقة.' : 'لا توجد حركات بعد.'" />
   }
 </section>

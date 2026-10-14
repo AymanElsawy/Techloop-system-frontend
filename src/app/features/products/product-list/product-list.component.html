@@ -58,18 +58,14 @@
     </label>
 
     @if (hasFilters()) {
-      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+      <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
     }
   </div>
 
-  @if (products.isLoading() && !products.hasValue()) {
-    <app-status-message type="loading" message="جاري تحميل الأصناف..." />
-  } @else if (products.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل الأصناف." (retry)="products.reload()" />
-  } @else if (!products.value()?.length) {
-    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد أصناف مطابقة للبحث.' : 'لا توجد أصناف بعد.'" />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  @if (products.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل الأصناف." (retry)="products.resource.reload()" />
+  } @else if (products.value()?.total) {
+    <app-pager [(page)]="products.page" [(limit)]="products.limit" [total]="products.value()!.total" [loading]="products.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -88,12 +84,12 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (p of products.value(); track p.id) {
+          @for (p of products.value()!.items; track p.id) {
             <tr [class.opacity-60]="!p.isActive">
               <td class="px-4 py-3">
                 <p class="font-semibold">
                   @if (isManager) {
-                    <a [routerLink]="['/inventory/products', p.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ p.name }}</a>
+                    <a [routerLink]="['/inventory/products', p.id]" class="hover:text-stormy-teal hover:underline">{{ p.name }}</a>
                   } @else {
                     {{ p.name }}
                   }
@@ -115,7 +111,7 @@
                   @if (p.lastCost != null) {
                     <p class="whitespace-nowrap">{{ p.lastCost | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
                     @if (p.lastSupplier) {
-                      <a [routerLink]="['/suppliers', p.lastSupplier.id]" class="block whitespace-nowrap text-xs text-stormy-teal hover:text-vibrant-coral-400 hover:underline">{{ p.lastSupplier.name }}</a>
+                      <a [routerLink]="['/suppliers', p.lastSupplier.id]" class="block whitespace-nowrap text-xs text-stormy-teal hover:text-stormy-teal hover:underline">{{ p.lastSupplier.name }}</a>
                     }
                     @if (p.lastPurchaseAt) {
                       <p class="whitespace-nowrap text-xs text-stormy-teal">{{ p.lastPurchaseAt | date: 'd MMM y' }}</p>
@@ -150,12 +146,12 @@
               @if (isManager) {
                 <td class="whitespace-nowrap px-4 py-3">
                   <div class="flex flex-col items-start gap-1 text-sm font-medium">
-                    <a [routerLink]="['/inventory/products', p.id, 'edit']" class="text-vibrant-coral-400 hover:underline">تعديل</a>
-                    <a [routerLink]="['/inventory/products', p.id]" class="text-vibrant-coral-400 hover:underline">المشتريات</a>
+                    <a [routerLink]="['/inventory/products', p.id, 'edit']" class="text-stormy-teal hover:underline">تعديل</a>
+                    <a [routerLink]="['/inventory/products', p.id]" class="text-stormy-teal hover:underline">المشتريات</a>
                     @if (p.isActive) {
-                      <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="text-vibrant-coral-400 hover:underline">وارد</a>
+                      <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="text-stormy-teal hover:underline">وارد</a>
                     }
-                    <button type="button" (click)="deleteProduct(p)" class="text-vibrant-coral-400 hover:underline">حذف</button>
+                    <button type="button" (click)="deleteProduct(p)" class="text-stormy-teal hover:underline">حذف</button>
                   </div>
                 </td>
               }
@@ -163,6 +159,10 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-pager>
+  } @else if (products.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل الأصناف..." />
+  } @else {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا توجد أصناف مطابقة للبحث.' : 'لا توجد أصناف بعد.'" />
   }
 </section>

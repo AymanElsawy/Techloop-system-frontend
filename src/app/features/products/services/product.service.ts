@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
+import { getPage } from '../../../shared/paged';
 import { Product, ProductFilters, ProductInput } from '../models/product.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +16,10 @@ export class ProductService {
     const params = new HttpParams({ fromObject: { ...filters } });
     return this.http.get<ApiResponse<Product[]>>(this.url, { params }).pipe(map(({ data }) => data));
   }
+  getProductsPage(query: ProductFilters & PageParams): Observable<Page<Product>> {
+    return getPage(this.http, this.url, query);
+  }
+
 
   getProduct(id: string): Observable<Product> {
     return this.http.get<ApiResponse<Product>>(`${this.url}/${id}`).pipe(map(({ data }) => data));

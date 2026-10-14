@@ -9,8 +9,8 @@ import { GOVERNORATES } from '../../../features/customers/models/customer.model'
     <fieldset>
       <legend class="form-label">{{ label() }}</legend>
       <div class="mb-2 flex gap-3 text-xs">
-        <button type="button" class="text-vibrant-coral-400 hover:underline" (click)="selected.set([...all])">تحديد الكل</button>
-        <button type="button" class="text-vibrant-coral-400 hover:underline" (click)="selected.set([])">إلغاء التحديد</button>
+        <button type="button" class="text-stormy-teal hover:underline" (click)="selected.set([...all])">تحديد الكل</button>
+        <button type="button" class="text-stormy-teal hover:underline" (click)="selected.set([])">إلغاء التحديد</button>
         <span class="text-stormy-teal">({{ selected().length }} محافظة)</span>
       </div>
       <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">

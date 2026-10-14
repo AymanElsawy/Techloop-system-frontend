@@ -17,7 +17,7 @@ export interface StatementLine {
   method: string;
   createdBy: string;
   cancelled: boolean;
-  /** Payment still with the rep: shown, but not deducted from the balance until handed over. */
+  /** Payment still with the rep (not handed to the treasury yet); already deducted from the balance. */
   pending: boolean;
   /** A bounced cheque: shown, never deducted. */
   bounced: boolean;
@@ -27,8 +27,8 @@ export interface StatementLine {
 
 /**
  * Merges invoices, collections and sales returns into a statement with a running balance.
- * Cancelled entries are listed but don't affect the balance; payments still with the rep
- * add to the debit side only, and bounced cheques never reduce it. Returned newest first.
+ * Cancelled entries are listed but don't affect the balance; payments still with the rep are
+ * deducted right away, and bounced cheques never reduce it. Returned newest first.
  */
 export function buildStatement(
   invoices: Invoice[],
@@ -84,7 +84,7 @@ export function buildStatement(
   const chronological = lines.sort((a, b) => a.date.localeCompare(b.date));
   for (const line of chronological) {
     if (line.cancelled) continue;
-    balance = round2(balance + line.debit - (line.pending || line.bounced ? 0 : line.credit));
+    balance = round2(balance + line.debit - (line.bounced ? 0 : line.credit));
     line.balance = balance;
   }
   return chronological.reverse();

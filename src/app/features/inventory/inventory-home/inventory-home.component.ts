@@ -8,7 +8,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { PRODUCT_UNIT_LABELS } from '../../products/models/product.model';
-import { totalQuantity } from '../models/inventory.model';
+import { totalQuantity, warehouseLabel } from '../models/inventory.model';
 import { InventoryService } from '../services/inventory.service';
 import { InventoryTabsComponent } from '../inventory-tabs/inventory-tabs.component';
 
@@ -26,6 +26,7 @@ export class InventoryHomeComponent {
   protected readonly isManager = this.auth.hasRole(UserRole.OWNER, UserRole.ADMIN, UserRole.WAREHOUSE_REP);
   protected readonly unitLabels = PRODUCT_UNIT_LABELS;
   protected readonly totalQuantity = totalQuantity;
+  protected readonly warehouseLabel = warehouseLabel;
 
   protected readonly warehouses = rxResource({
     params: () => this.isManager || undefined,

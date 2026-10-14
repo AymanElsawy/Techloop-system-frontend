@@ -39,14 +39,15 @@
     </p>
   }
 
-  @if (report.isLoading()) {
-    <app-status-message type="loading" message="جاري التحميل..." />
-  } @else if (report.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="report.reload()" />
-  } @else if (!report.value()?.reps?.length) {
-    <app-status-message type="empty" message="مفيش مناديب." />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="rep-search">بحث</label>
+    <input id="rep-search" type="search" class="form-input w-full sm:w-64" placeholder="بحث باسم المندوب" [value]="search()" (input)="search.set($any($event.target).value)" />
+  </div>
+
+  @if (report.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="report.resource.reload()" />
+  } @else if (report.value()?.total) {
+    <app-pager [(page)]="report.page" [(limit)]="report.limit" [total]="report.value()!.total" [loading]="report.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -59,7 +60,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (r of report.value()!.reps; track r.id) {
+          @for (r of report.value()!.items; track r.id) {
             <tr>
               <td class="px-4 py-3 font-medium">
                 {{ r.name }}
@@ -110,9 +111,9 @@
               <td class="px-4 py-3 font-bold tabular-nums">{{ r.commission | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
               <td class="px-4 py-3">
                 <a routerLink="/targets/print" [queryParams]="printParams(r.id)"
-                  class="me-3 whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline">طباعة</a>
+                  class="me-3 whitespace-nowrap text-sm font-medium text-stormy-teal hover:underline">طباعة</a>
                 @if (editingId() !== r.id) {
-                  <button type="button" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="edit(r)">
+                  <button type="button" class="whitespace-nowrap text-sm font-medium text-stormy-teal hover:underline" (click)="edit(r)">
                     تعديل التارجت
                   </button>
                 }
@@ -161,10 +162,14 @@
         <tfoot>
           <tr class="border-t border-stormy-teal-900 font-bold">
             <td colspan="4" class="px-4 py-3">إجمالي العمولات</td>
-            <td colspan="2" class="px-4 py-3 tabular-nums">{{ totalCommission() | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+            <td colspan="2" class="px-4 py-3 tabular-nums">{{ report.value()!.sum ?? 0 | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </app-pager>
+  } @else if (report.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  } @else {
+    <app-status-message type="empty" [message]="search() ? 'مفيش مناديب مطابقين للبحث.' : 'مفيش مناديب.'" />
   }
 </section>

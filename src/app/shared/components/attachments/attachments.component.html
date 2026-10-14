@@ -12,9 +12,9 @@
             <span class="text-xs text-stormy-teal">({{ a.uploadedBy.name }}، {{ a.uploadedAt | date: 'd MMM y' }})</span>
           </span>
           @if (previews()[a.id]; as p) {
-            <a [href]="p.url" target="_blank" rel="noopener" class="text-vibrant-coral-400 hover:underline">فتح في صفحة جديدة</a>
+            <a [href]="p.url" target="_blank" rel="noopener" class="text-stormy-teal hover:underline">فتح في صفحة جديدة</a>
           } @else {
-            <button type="button" class="text-vibrant-coral-400 hover:underline" (click)="view(a)">عرض</button>
+            <button type="button" class="text-stormy-teal hover:underline" (click)="view(a)">عرض</button>
           }
         </div>
         @if (previews()[a.id]; as p) {

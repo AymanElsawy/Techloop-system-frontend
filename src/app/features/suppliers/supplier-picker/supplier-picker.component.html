@@ -3,7 +3,7 @@
     <div class="flex items-baseline justify-between">
       <label for="supplier" class="form-label">المورد{{ required() ? ' *' : '' }}</label>
       @if (!showForm()) {
-        <button type="button" class="text-sm font-semibold text-vibrant-coral-400 hover:underline" (click)="showForm.set(true)">+ مورد جديد</button>
+        <button type="button" class="text-sm font-semibold text-stormy-teal hover:underline" (click)="showForm.set(true)">+ مورد جديد</button>
       }
     </div>
     <select id="supplier" [formControl]="control()" class="form-input">

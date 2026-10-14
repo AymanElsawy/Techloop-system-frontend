@@ -27,7 +27,7 @@
         <label for="cancel-reason" class="form-label">سبب الإلغاء</label>
         <textarea id="cancel-reason" rows="2" class="form-input" [formControl]="cancelReason"></textarea>
         <div class="flex gap-2">
-          <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
+          <button type="button" class="btn-primary" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
           <button type="button" class="btn-outline" (click)="showCancel.set(false)">رجوع</button>
         </div>
         @if (cancelError(); as message) {

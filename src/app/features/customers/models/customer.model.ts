@@ -129,7 +129,7 @@ export type CustomerInput = Pick<
   Partial<Pick<Customer, 'creditLimit' | 'paymentTermDays' | 'discountPercent'>>;
 
 /** What a rep can still sell on credit before hitting the limit; null = no limit. */
-export function creditLeft(c: Pick<Customer, 'creditLimit' | 'debit' | 'pendingPayments'>): number | null {
+export function creditLeft(c: Pick<Customer, 'creditLimit' | 'debit'>): number | null {
   if (c.creditLimit == null) return null;
-  return Math.round((c.creditLimit - Math.max(c.debit - c.pendingPayments, 0)) * 100) / 100;
+  return Math.round((c.creditLimit - c.debit) * 100) / 100;
 }

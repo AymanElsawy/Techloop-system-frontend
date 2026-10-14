@@ -11,14 +11,15 @@
     </p>
   }
 
-  @if (users.isLoading()) {
-    <app-status-message type="loading" message="جاري تحميل المستخدمين..." />
-  } @else if (users.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل المستخدمين." (retry)="users.reload()" />
-  } @else if (!users.value()?.length) {
-    <app-status-message type="empty" message="لا يوجد مستخدمون." />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="user-search">بحث</label>
+    <input id="user-search" type="search" class="form-input w-full sm:w-64" placeholder="بحث بالاسم أو اسم الدخول" [value]="search()" (input)="search.set($any($event.target).value)" />
+  </div>
+
+  @if (users.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل المستخدمين." (retry)="users.resource.reload()" />
+  } @else if (users.value()?.total) {
+    <app-pager [(page)]="users.page" [(limit)]="users.limit" [total]="users.value()!.total" [loading]="users.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -33,7 +34,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (user of users.value(); track user.id) {
+          @for (user of users.value()!.items; track user.id) {
             <tr>
               <td class="px-4 py-3 font-medium">{{ user.name }}</td>
               <td class="px-4 py-3 text-right" dir="ltr">{{ user.username }}</td>
@@ -69,12 +70,12 @@
               </td>
               <td class="px-4 py-3">
                 @if (user.role === UserRole.SALES_REP && regionUserId() !== user.id) {
-                  <button type="button" class="me-3 whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="openRegion(user)">
+                  <button type="button" class="me-3 whitespace-nowrap text-sm font-medium text-stormy-teal hover:underline" (click)="openRegion(user)">
                     المحافظات
                   </button>
                 }
                 @if (canSetPassword(user) && passwordUserId() !== user.id) {
-                  <button type="button" class="whitespace-nowrap text-sm font-medium text-vibrant-coral-400 hover:underline" (click)="openPasswordForm(user)">
+                  <button type="button" class="whitespace-nowrap text-sm font-medium text-stormy-teal hover:underline" (click)="openPasswordForm(user)">
                     تعيين كلمة مرور
                   </button>
                 }
@@ -113,6 +114,10 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-pager>
+  } @else if (users.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل المستخدمين..." />
+  } @else {
+    <app-status-message type="empty" [message]="search() ? 'لا يوجد مستخدمون مطابقون للبحث.' : 'لا يوجد مستخدمون.'" />
   }
 </section>

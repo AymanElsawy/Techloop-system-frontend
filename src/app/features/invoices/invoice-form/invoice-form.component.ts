@@ -146,12 +146,7 @@ export class InvoiceFormComponent {
   protected readonly total = computed(() => round2(this.lines().reduce((sum, l) => sum + l.total, 0)));
   protected readonly paid = computed(() => Number(this.value().paidAmount) || 0);
   /** Customer's debt before this invoice; payments above the total settle it. */
-  /** Money already collected but not handed over can't be collected again (same rule as the backend). */
-  protected readonly previousDebt = computed(() => {
-    const c = this.customer.value();
-    return c ? Math.max(round2(c.debit - c.pendingPayments), 0) : 0;
-  });
-  protected readonly pendingPayments = computed(() => this.customer.value()?.pendingPayments ?? 0);
+  protected readonly previousDebt = computed(() => this.customer.value()?.debit ?? 0);
   protected readonly maxPaid = computed(() => round2(this.total() + this.previousDebt()));
   protected readonly remaining = computed(() => round2(Math.max(this.total() - this.paid(), 0)));
   protected readonly previousDebtPaid = computed(() => round2(Math.max(this.paid() - this.total(), 0)));

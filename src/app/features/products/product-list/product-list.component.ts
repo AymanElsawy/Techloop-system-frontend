@@ -2,13 +2,15 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
-import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { PRODUCT_UNIT_LABELS, Product, ProductFilters, ProductUnit, expiryState, isLowStock } from '../models/product.model';
 import { ProductService } from '../services/product.service';
@@ -18,7 +20,7 @@ type ActiveFilter = '' | 'true' | 'false';
 
 @Component({
   selector: 'app-product-list',
-  imports: [CurrencyPipe, DatePipe, InventoryTabsComponent, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, InventoryTabsComponent, PagerComponent, RouterLink, StatusMessageComponent],
   templateUrl: './product-list.component.html',
 })
 export class ProductListComponent {
@@ -42,15 +44,15 @@ export class ProductListComponent {
     () => !!(this.search() || this.unit() || this.lowStock() || (this.isManager && this.active() !== 'true')),
   );
 
-  protected readonly products = rxResource({
-    params: (): ProductFilters => ({
+  protected readonly products = pagedResource(
+    (): ProductFilters => ({
       ...(this.debouncedSearch().trim() && { search: this.debouncedSearch().trim() }),
       ...(this.unit() && { unit: this.unit() as ProductUnit }),
       ...(this.lowStock() && { lowStock: true }),
       ...(this.active() && { active: this.active() === 'true' }),
     }),
-    stream: ({ params }) => this.productService.getProducts(params),
-  });
+    (params) => this.productService.getProductsPage(params),
+  );
 
   protected inputValue(event: Event): string {
     return (event.target as HTMLInputElement | HTMLSelectElement).value;
@@ -78,7 +80,7 @@ export class ProductListComponent {
   protected deleteProduct(p: Product): void {
     if (!confirm(`حذف الصنف "${p.name}"؟`)) return;
     this.productService.deleteProduct(p.id).subscribe({
-      next: () => this.products.reload(),
+      next: () => this.products.resource.reload(),
       error: (err: unknown) =>
         alert(
           err instanceof HttpErrorResponse && err.status === 409

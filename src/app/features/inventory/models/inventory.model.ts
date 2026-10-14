@@ -123,6 +123,34 @@ export interface StockItemInput {
   unitCost?: number;
 }
 
+export type CustodyRequestStatus = 'PENDING' | 'ISSUED' | 'REJECTED' | 'CANCELLED';
+
+export const CUSTODY_REQUEST_STATUS_LABELS: Record<CustodyRequestStatus, string> = {
+  PENDING: 'مستني الصرف',
+  ISSUED: 'اتصرف',
+  REJECTED: 'مرفوض',
+  CANCELLED: 'ملغي',
+};
+
+/** طلب عهدة: a sales rep asks their warehouse for goods. */
+export interface CustodyRequest {
+  id: string;
+  number: number;
+  rep: { id: string; name: string };
+  warehouse: { id: string; name: string };
+  /** What was requested (the issued quantities are on `movement`). */
+  items: { product: string; name: string; quantity: number }[];
+  notes: string | null;
+  status: CustodyRequestStatus;
+  /** The ISSUE movement once issued. */
+  movement: { id: string; number: number } | null;
+  /** Why it was rejected. */
+  reason: string | null;
+  handledBy: { id: string; name: string } | null;
+  handledAt: string | null;
+  createdAt: string;
+}
+
 /** productId -> quantity */
 export function quantityMap(rows: StockRow[]): Map<string, number> {
   return new Map(rows.map((r) => [r.product.id, r.quantity]));
@@ -130,4 +158,9 @@ export function quantityMap(rows: StockRow[]): Map<string, number> {
 
 export function totalQuantity(rows: StockRow[]): number {
   return rows.reduce((sum, r) => sum + r.quantity, 0);
+}
+
+/** "مخزن القاهرة" for a warehouse named "القاهرة", without doubling a name that already says "مخزن". */
+export function warehouseLabel(name: string): string {
+  return name.trim().startsWith('مخزن') ? name : `مخزن ${name}`;
 }

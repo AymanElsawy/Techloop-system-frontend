@@ -49,9 +49,9 @@
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @for (w of warehouses.value(); track w.id) {
           <a [routerLink]="['/inventory/warehouses', w.id]"
-            class="card group block transition hover:border-stormy-teal-700 focus-visible:outline-2 focus-visible:outline-vibrant-coral-400">
+            class="card group block transition hover:border-stormy-teal-700 focus-visible:outline-2 focus-visible:outline-stormy-teal">
             <div class="flex items-start justify-between gap-3">
-              <h2 class="text-lg font-bold group-hover:text-vibrant-coral-400">{{ w.name }}</h2>
+              <h2 class="text-lg font-bold group-hover:text-stormy-teal">{{ w.name }}</h2>
               @if (!w.isActive) {
                 <span class="rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">موقوف</span>
               }
@@ -84,13 +84,13 @@
           لم يتم ربطك بمخزن بعد، لذلك لا يمكنك البيع. تواصل مع الإدارة.
         </p>
       } @else {
-        <p class="text-sm text-stormy-teal">تبيع من مخزن <span class="font-semibold text-yale-blue">{{ s.warehouse.name }}</span>. الفاتورة تخصم من عهدتك أولاً، والباقي من المخزن.</p>
+        <p class="text-sm text-stormy-teal">تبيع من <span class="font-semibold text-yale-blue">{{ warehouseLabel(s.warehouse.name) }}</span>. الفاتورة تخصم من عهدتك أولاً، والباقي من المخزن.</p>
       }
 
       <div class="grid gap-6 lg:grid-cols-2">
         @for (block of [
           { title: 'عهدتي', rows: s.custody, empty: 'لا توجد بضاعة في عهدتك.', show: true },
-          { title: 'مخزن ' + (s.warehouse?.name ?? ''), rows: s.warehouseStock, empty: 'المخزن فارغ.', show: !!s.warehouse },
+          { title: warehouseLabel(s.warehouse?.name ?? ''), rows: s.warehouseStock, empty: 'المخزن فارغ.', show: !!s.warehouse },
         ]; track block.title) {
           @if (block.show) {
           <div class="card p-0">

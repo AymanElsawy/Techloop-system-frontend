@@ -98,7 +98,7 @@
               </div>
               <div class="sm:col-span-1">
                 @if (items.length > 1) {
-                  <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="removeItem(i)"
+                  <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="removeItem(i)"
                     [attr.aria-label]="'حذف السطر ' + (i + 1)">حذف</button>
                 }
               </div>
@@ -128,11 +128,8 @@
       <!-- Payment -->
       <div class="card space-y-4">
         <h2 class="font-semibold">السداد</h2>
-        @if (pendingPayments() > 0) {
-          <p class="text-xs text-stormy-teal">فيه {{ pendingPayments() | currency: 'EGP' : 'symbol' : '1.0-2' }} محصّلة ولسه متسلمتش للخزنة، ومش محسوبة هنا.</p>
-        }
         @if (!isManager) {
-          <p class="text-xs text-stormy-teal">المبلغ اللي تستلمه يفضل في خزنتك لحد ما تسلّمه للإدارة، ووقتها يتخصم من مديونية العميل.</p>
+          <p class="text-xs text-stormy-teal">المبلغ اللي تستلمه بيتخصم من مديونية العميل على طول، ويفضل في خزنتك لحد ما تسلّمه للإدارة.</p>
         }
         <dl class="grid grid-cols-2 gap-3 rounded-lg bg-alabaster-grey-800 p-4 text-center sm:grid-cols-4">
           <div>

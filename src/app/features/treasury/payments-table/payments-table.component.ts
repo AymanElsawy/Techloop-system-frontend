@@ -45,12 +45,12 @@ export const paymentKey = (p: Pick<Payment, 'kind' | 'id'>) => `${p.kind}:${p.id
               }
               <td class="whitespace-nowrap px-4 py-3">{{ p.createdAt | date: 'd MMM y' }}</td>
               <td class="px-4 py-3">
-                <a [routerLink]="[p.kind === 'INVOICE' ? '/invoices' : '/collections', p.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">
+                <a [routerLink]="[p.kind === 'INVOICE' ? '/invoices' : '/collections', p.id]" class="font-semibold hover:text-stormy-teal hover:underline">
                   {{ p.kind === 'INVOICE' ? 'مقدم فاتورة' : 'فاتورة تحصيل' }} <span dir="ltr">{{ p.number }}</span>
                 </a>
               </td>
               <td class="px-4 py-3">
-                <a [routerLink]="['/customers', p.customer.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ p.customer.name }}</a>
+                <a [routerLink]="['/customers', p.customer.id]" class="hover:text-stormy-teal hover:underline">{{ p.customer.name }}</a>
                 <p class="text-xs text-stormy-teal">{{ p.customer.governorate }}</p>
               </td>
               @if (showRep()) {
@@ -67,7 +67,7 @@ export const paymentKey = (p: Pick<Payment, 'kind' | 'id'>) => `${p.kind}:${p.id
                 <td class="whitespace-nowrap px-4 py-3">
                   <div class="flex gap-2">
                     <button type="button" class="btn-outline px-3 py-1 text-xs" (click)="chequeAction.emit({ payment: p, status: ChequeStatus.CLEARED })">اتصرف</button>
-                    <button type="button" class="btn-outline border-vibrant-coral-400 px-3 py-1 text-xs text-vibrant-coral-400" (click)="chequeAction.emit({ payment: p, status: ChequeStatus.BOUNCED })">مرتد</button>
+                    <button type="button" class="btn-outline px-3 py-1 text-xs" (click)="chequeAction.emit({ payment: p, status: ChequeStatus.BOUNCED })">مرتد</button>
                   </div>
                 </td>
               }

@@ -102,20 +102,45 @@
 
 @utility btn {
   @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold whitespace-nowrap transition
-    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vibrant-coral-400
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stormy-teal
     active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
   @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(35_56_67/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
 }
-@utility btn-accent {
-  @apply btn bg-vibrant-coral-400 text-white shadow-[0_1px_0_rgb(124_20_12/0.3)] hover:bg-vibrant-coral-400 dark:bg-orange-400 dark:text-black dark:hover:bg-orange;
-}
 @utility btn-outline {
-  @apply btn border border-stormy-teal-800 bg-surface text-yale-blue hover:border-stormy-teal-700 hover:bg-stormy-teal-900/60;
+  @apply btn border border-stormy-teal bg-surface text-stormy-teal hover:bg-stormy-teal-900/60;
 }
 @utility card {
   @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(35_56_67/0.05),0_4px_12px_-6px_rgb(35_56_67/0.08)];
+}
+/* <details class="accordion"><summary><h2>…</h2> meta</summary> body</details>: a collapsible card section. */
+@utility accordion {
+  @apply card overflow-hidden p-0;
+  & > summary {
+    @apply flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 select-none;
+  }
+  & > summary::-webkit-details-marker {
+    display: none;
+  }
+  & > summary > h2::before {
+    content: '‹';
+    @apply me-2 inline-block transition-transform;
+  }
+  &[open] > summary {
+    @apply border-b border-stormy-teal-900;
+  }
+  &[open] > summary > h2::before {
+    @apply -rotate-90;
+  }
+  /* Tables and pagers inside already render as cards: flatten them into the body. */
+  & .card {
+    @apply rounded-none border-0 shadow-none;
+  }
+  /* A pager's page numbers sit under the table, inside the card's padding. */
+  & app-pager > nav {
+    @apply px-4 pb-3;
+  }
 }
 @utility form-label {
   @apply mb-1.5 block text-sm font-semibold text-yale-blue;

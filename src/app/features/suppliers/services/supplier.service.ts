@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
+import { getPage } from '../../../shared/paged';
 import { Supplier, SupplierInput, SupplierPayment, SupplierPaymentInput } from '../models/supplier.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +16,10 @@ export class SupplierService {
     const params = new HttpParams({ fromObject: { ...filters } });
     return this.http.get<ApiResponse<Supplier[]>>(this.url, { params }).pipe(map(({ data }) => data));
   }
+  getSuppliersPage(query: { search?: string; active?: boolean } & PageParams): Observable<Page<Supplier>> {
+    return getPage(this.http, this.url, query);
+  }
+
 
   getSupplier(id: string): Observable<Supplier> {
     return this.http.get<ApiResponse<Supplier>>(`${this.url}/${id}`).pipe(map(({ data }) => data));

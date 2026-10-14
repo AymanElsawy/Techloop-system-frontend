@@ -101,7 +101,7 @@ import { ProductService } from '../services/product.service';
                   <tr>
                     <td class="px-4 py-3">
                       @if (s.supplier) {
-                        <a [routerLink]="['/suppliers', s.supplier.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">{{ s.supplier.name }}</a>
+                        <a [routerLink]="['/suppliers', s.supplier.id]" class="font-semibold hover:text-stormy-teal hover:underline">{{ s.supplier.name }}</a>
                       } @else {
                         —
                       }
@@ -137,7 +137,7 @@ import { ProductService } from '../services/product.service';
                   <tr>
                     <td class="whitespace-nowrap px-4 py-3">{{ l.date | date: 'd MMM y, h:mm a' }}</td>
                     <td class="px-4 py-3">
-                      <a [routerLink]="['/inventory/movements', l.movementId]" class="text-vibrant-coral-400 hover:underline" dir="ltr">#{{ l.number ?? '—' }}</a>
+                      <a [routerLink]="['/inventory/movements', l.movementId]" class="text-stormy-teal hover:underline" dir="ltr">#{{ l.number ?? '—' }}</a>
                     </td>
                     <td class="px-4 py-3">{{ l.supplier?.name ?? '—' }}</td>
                     <td class="px-4 py-3">{{ l.warehouse?.name ?? '—' }}</td>

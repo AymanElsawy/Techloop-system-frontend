@@ -195,7 +195,7 @@
                     {{ receiptRemaining(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}
                   </td>
                   <td class="whitespace-nowrap px-4 py-3">
-                    <a [routerLink]="['/documents', 'PURCHASE', m.id]" class="text-vibrant-coral-400 hover:underline">التفاصيل</a>
+                    <a [routerLink]="['/documents', 'PURCHASE', m.id]" class="text-stormy-teal hover:underline">التفاصيل</a>
                   </td>
                 </tr>
               }
@@ -244,7 +244,7 @@
                         <div class="space-y-2">
                           <textarea rows="2" class="form-input" placeholder="سبب الإلغاء" [formControl]="cancelReason"></textarea>
                           <div class="flex gap-2">
-                            <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="confirmCancel()">تأكيد</button>
+                            <button type="button" class="btn-primary" [disabled]="cancelReason.invalid || cancelling()" (click)="confirmCancel()">تأكيد</button>
                             <button type="button" class="btn-outline" (click)="cancellingId.set(null)">تراجع</button>
                           </div>
                           @if (cancelError(); as message) {
@@ -252,7 +252,7 @@
                           }
                         </div>
                       } @else {
-                        <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="startCancel(p.id)">إلغاء</button>
+                        <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="startCancel(p.id)">إلغاء</button>
                       }
                     } @else if (p.cancelReason) {
                       <p class="text-xs text-stormy-teal">السبب: {{ p.cancelReason }}</p>

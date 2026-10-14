@@ -26,11 +26,11 @@ describe('buildStatement', () => {
     ]);
   });
 
-  it('does not deduct payments still with the rep until they are handed over', () => {
+  it('deducts payments still with the rep right away', () => {
     const pending = { ...collection('C1', '2026-09-03', 300), depositStatus: DepositStatus.PENDING } as Collection;
     const lines = buildStatement([invoice('I1', '2026-09-01', 1000, 0)], [pending]);
     expect(lines.map((l) => [l.number, l.pending, l.balance])).toEqual([
-      ['C1', true, 1000],
+      ['C1', true, 700],
       ['I1', false, 1000],
     ]);
   });

@@ -2,19 +2,22 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '../../shared/date.pipe';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
 
 import { ROLE_LABELS, UserRole } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { httpErrorMessage } from '../../core/http/http-error';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../shared/paged';
 import { GovernoratePickerComponent } from '../../shared/components/governorate-picker/governorate-picker.component';
 import { ManagedUser, UserService } from './user.service';
 import { InventoryService } from '../inventory/services/inventory.service';
 
 @Component({
   selector: 'app-user-list',
-  imports: [DatePipe, GovernoratePickerComponent, ReactiveFormsModule, RouterLink, StatusMessageComponent],
+  imports: [DatePipe, GovernoratePickerComponent, PagerComponent, ReactiveFormsModule, RouterLink, StatusMessageComponent],
   templateUrl: './user-list.component.html',
 })
 export class UserListComponent {
@@ -24,7 +27,13 @@ export class UserListComponent {
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly UserRole = UserRole;
   private readonly inventory = inject(InventoryService);
-  protected readonly users = rxResource({ stream: () => this.userService.getUsers() });
+  /** Name or username. */
+  protected readonly search = signal('');
+  private readonly debouncedSearch = toSignal(toObservable(this.search).pipe(debounceTime(300)), { initialValue: '' });
+  protected readonly users = pagedResource(
+    () => ({ ...(this.debouncedSearch().trim() && { search: this.debouncedSearch().trim() }) }),
+    (params) => this.userService.getUsersPage(params),
+  );
   protected readonly warehouses = rxResource({ stream: () => this.inventory.getWarehouses() });
 
   /** Saves right away; the backend refuses while the rep still holds custody. */
@@ -34,7 +43,7 @@ export class UserListComponent {
     this.feedback.set(null);
     this.userService.setWarehouse(user.id, warehouse).subscribe({
       next: (updated) => {
-        this.users.update((list) => list?.map((u) => (u.id === updated.id ? updated : u)));
+        this.replace(updated);
         this.feedback.set({ ok: true, message: `تم تحديث مخزن ${user.name}.` });
       },
       error: (err: unknown) => {
@@ -75,7 +84,7 @@ export class UserListComponent {
       next: (updated) => {
         this.saving.set(false);
         this.regionUserId.set(null);
-        this.users.update((list) => list?.map((u) => (u.id === updated.id ? updated : u)));
+        this.replace(updated);
         this.feedback.set({ ok: true, message: `تم تحديث محافظات ${user.name}.` });
       },
       error: (err: unknown) => {
@@ -113,5 +122,10 @@ export class UserListComponent {
         this.feedback.set({ ok: false, message: httpErrorMessage(err, 'تعذر تعيين كلمة المرور.') });
       },
     });
+  }
+
+  /** Swaps in a user the server returned, on the page shown. */
+  private replace(updated: ManagedUser): void {
+    this.users.resource.update((page) => page && { ...page, items: page.items.map((u) => (u.id === updated.id ? updated : u)) });
   }
 }

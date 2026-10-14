@@ -2,9 +2,9 @@
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">العملاء</h1>
     <div class="flex flex-wrap gap-3">
-      @if (isManager && pending.value()?.length) {
-        <button type="button" class="btn bg-soft-apricot-800 text-soft-apricot-200 hover:bg-soft-apricot-700" (click)="showPending()">
-          بانتظار الموافقة ({{ pending.value()?.length }})
+      @if (isManager && pending.value()?.total) {
+        <button type="button" class="btn-outline" (click)="showPending()">
+          بانتظار الموافقة ({{ pending.value()?.total }})
         </button>
       }
       <a routerLink="/customers/new" class="btn-primary">عميل جديد</a>
@@ -49,18 +49,14 @@
     }
 
     @if (hasFilters()) {
-      <button type="button" class="text-sm text-vibrant-coral-400 hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
+      <button type="button" class="text-sm text-stormy-teal hover:underline" (click)="clearFilters()">مسح الفلاتر</button>
     }
   </div>
 
-  @if (customers.isLoading() && !customers.hasValue()) {
-    <app-status-message type="loading" message="جاري تحميل العملاء..." />
-  } @else if (customers.error()) {
-    <app-status-message type="error" message="حدث خطأ أثناء تحميل العملاء." (retry)="customers.reload()" />
-  } @else if (!customers.value()?.length) {
-    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد عملاء مطابقون للبحث.' : 'لا يوجد عملاء بعد.'" />
-  } @else {
-    <div class="card overflow-x-auto p-0">
+  @if (customers.resource.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء تحميل العملاء." (retry)="customers.resource.reload()" />
+  } @else if (customers.value()?.total) {
+    <app-pager [(page)]="customers.page" [(limit)]="customers.limit" [total]="customers.value()!.total" [loading]="customers.resource.isLoading()">
       <table class="w-full text-right text-sm">
         <thead class="table-head">
           <tr>
@@ -74,10 +70,10 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-stormy-teal-900">
-          @for (c of customers.value(); track c.id) {
+          @for (c of customers.value()!.items; track c.id) {
             <tr class="cursor-pointer transition hover:bg-alabaster-grey-800" (click)="open(c.id)">
               <td class="px-4 py-3">
-                <a [routerLink]="['/customers', c.id]" class="font-semibold text-yale-blue hover:text-vibrant-coral-400 hover:underline">
+                <a [routerLink]="['/customers', c.id]" class="font-semibold text-yale-blue hover:text-stormy-teal hover:underline">
                   {{ c.name }}
                 </a>
                 @if (c.phone) {
@@ -117,6 +113,10 @@
           }
         </tbody>
       </table>
-    </div>
+    </app-pager>
+  } @else if (customers.resource.isLoading()) {
+    <app-status-message type="loading" message="جاري تحميل العملاء..." />
+  } @else {
+    <app-status-message type="empty" [message]="hasFilters() ? 'لا يوجد عملاء مطابقون للبحث.' : 'لا يوجد عملاء بعد.'" />
   }
 </section>

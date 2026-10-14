@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,6 +9,7 @@ import { Observable, forkJoin, map } from 'rxjs';
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { httpErrorMessage } from '../../../core/http/http-error';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { ShareLinkComponent } from '../../../shared/components/share-link/share-link.component';
 import {
@@ -38,7 +39,7 @@ const LINE_LABELS: Record<StatementLine['kind'], string> = {
 
 @Component({
   selector: 'app-customer-details',
-  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, ShareLinkComponent, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, PagerComponent, ReactiveFormsModule, RouterLink, ShareLinkComponent, StatusMessageComponent],
   templateUrl: './customer-details.component.html',
 })
 export class CustomerDetailsComponent {
@@ -85,6 +86,20 @@ export class CustomerDetailsComponent {
         this.collectionService.getCollections({ customerId: params }),
         this.returnsService.getReturns({ customerId: params }),
       ]).pipe(map(([invoices, collections, returns]) => buildStatement(invoices, collections, returns))),
+  });
+
+  /**
+   * The statement is built from every line (running balance), so it's paged here, not on the server.
+   * Newest first: page 1 = the latest lines.
+   */
+  protected readonly statementLimit = signal(20);
+  protected readonly statementPage = linkedSignal({
+    source: () => ({ id: this.id(), limit: this.statementLimit() }),
+    computation: () => 1,
+  });
+  protected readonly statementRows = computed(() => {
+    const start = (this.statementPage() - 1) * this.statementLimit();
+    return (this.statement.value() ?? []).slice(start, start + this.statementLimit());
   });
 
   /** Active sales returns: how many and their total value (reps: their own only, like the statement). */

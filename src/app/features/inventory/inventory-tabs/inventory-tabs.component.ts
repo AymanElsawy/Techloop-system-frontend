@@ -31,6 +31,7 @@ export class InventoryTabsComponent {
   protected readonly tabs = [
     { label: this.isManager ? 'المخازن' : 'عهدتي', path: '/inventory', exact: true },
     { label: 'الأصناف', path: '/inventory/products', exact: false },
+    { label: 'طلبات العهدة', path: '/inventory/requests', exact: false },
     { label: 'سجل الحركات', path: '/inventory/movements', exact: false },
   ];
 }

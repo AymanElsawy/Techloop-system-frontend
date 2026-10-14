@@ -115,6 +115,12 @@ export const routes: Routes = [
           import('./features/inventory/inventory-home/inventory-home.component').then((m) => m.InventoryHomeComponent),
       },
       {
+        path: 'inventory/requests',
+        title: 'طلبات العهدة',
+        loadComponent: () =>
+          import('./features/inventory/custody-requests/custody-requests.component').then((m) => m.CustodyRequestsComponent),
+      },
+      {
         path: 'inventory/movements',
         title: 'سجل حركات المخزن',
         loadComponent: () =>
@@ -281,6 +287,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
+        path: 'reports/:kind/:id/statement', // kind: customers | suppliers
+        title: 'كشف حساب',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () =>
+          import('./features/reports/statement-print.component').then((m) => m.StatementPrintComponent),
+      },
+      {
         path: 'targets',
         title: 'التارجت والعمولات',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
@@ -291,6 +304,12 @@ export const routes: Routes = [
         title: 'طباعة تقرير التارجت',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () => import('./features/users/targets-print.component').then((m) => m.TargetsPrintComponent),
+      },
+      {
+        path: 'audit-log',
+        title: 'سجل العمليات',
+        canActivate: [roleGuard(UserRole.OWNER)],
+        loadComponent: () => import('./features/audit-log/audit-log.component').then((m) => m.AuditLogComponent),
       },
       {
         path: 'users/new',

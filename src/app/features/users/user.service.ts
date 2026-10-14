@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { ApiResponse } from '../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../core/models/api-response';
+import { getPage } from '../../shared/paged';
 import { User, UserRole } from '../../core/auth/auth.models';
 import { PaymentMethod } from '../invoices/models/invoice.model';
 
@@ -98,6 +99,20 @@ export class UserService {
     return this.http
       .patch<ApiResponse<ManagedUser>>(`${this.url}/${id}`, { warehouse })
       .pipe(map(({ data }) => data));
+  }
+
+  getUsersPage(query: { search?: string } & PageParams): Observable<Page<ManagedUser>> {
+    return getPage(this.http, this.url, query);
+  }
+
+  /** One page of reps; `sum` = total commission of every matching rep. */
+  getTargetsPage(query: TargetPeriod & { search?: string } & PageParams): Observable<Page<TargetRow>> {
+    const params = new HttpParams({
+      fromObject: Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined && v !== '')),
+    });
+    return this.http
+      .get<ApiResponse<TargetReport>>(`${this.url}/targets`, { params })
+      .pipe(map(({ data, meta }) => ({ items: data.reps, total: meta?.total ?? data.reps.length, sum: meta?.sum })));
   }
 
   getTargets(params: TargetPeriod): Observable<TargetReport> {

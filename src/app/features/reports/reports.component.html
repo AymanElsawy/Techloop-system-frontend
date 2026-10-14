@@ -1,15 +1,20 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">التقارير</h1>
-    <button type="button" class="btn-primary" [disabled]="exporting()" (click)="export()">
-      {{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}
-    </button>
+    <!-- العملاء / الموردين have their own export (all, or the one shown) -->
+    @if (tab() !== 'customers' && tab() !== 'suppliers') {
+      <button type="button" class="btn-primary" [disabled]="exporting()" (click)="export()">
+        {{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}
+      </button>
+    }
   </div>
 
   <div class="flex flex-wrap gap-2" role="tablist">
     <button type="button" role="tab" [attr.aria-selected]="tab() === 'sales'" [class]="tab() === 'sales' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('sales')">المبيعات والربح</button>
     <button type="button" role="tab" [attr.aria-selected]="tab() === 'aging'" [class]="tab() === 'aging' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('aging')">أعمار الديون</button>
     <button type="button" role="tab" [attr.aria-selected]="tab() === 'purchases'" [class]="tab() === 'purchases' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('purchases')">المشتريات</button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'customers'" [class]="tab() === 'customers' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('customers')">العملاء</button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'suppliers'" [class]="tab() === 'suppliers' ? 'btn-primary' : 'btn-outline'" (click)="tab.set('suppliers')">الموردين</button>
   </div>
 
   @if (exportError(); as e) {
@@ -135,7 +140,7 @@
               @for (r of a.rows; track r.customer.id) {
                 <tr>
                   <td class="px-4 py-3">
-                    <a [routerLink]="['/customers', r.customer.id]" class="font-semibold hover:text-vibrant-coral-400 hover:underline">{{ r.customer.name }}</a>
+                    <a [routerLink]="['/customers', r.customer.id]" class="font-semibold hover:text-stormy-teal hover:underline">{{ r.customer.name }}</a>
                     <p class="text-xs text-stormy-teal">{{ r.customer.governorate }}{{ r.pending ? ' · تحت التسليم ' + (r.pending | number: '1.0-2') : '' }}</p>
                   </td>
                   <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ r.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
@@ -151,6 +156,10 @@
         <p class="text-xs text-stormy-teal">المدفوع بيسدّد أقدم فاتورة الأول، فالمديونية الباقية بتتوزع على أحدث الفواتير. التأخير بيتحسب من ميعاد الاستحقاق (مدة سداد العميل)، والعميل اللي ملوش مدة سداد من تاريخ الفاتورة.</p>
       }
     }
+  } @else if (tab() === 'customers') {
+    <app-party-reports kind="customers" />
+  } @else if (tab() === 'suppliers') {
+    <app-party-reports kind="suppliers" />
   } @else {
     <div class="card grid gap-3 sm:grid-cols-3">
       <div>

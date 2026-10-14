@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { ApiResponse } from '../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../core/models/api-response';
+import { getPage } from '../../shared/paged';
 import { Movement } from '../inventory/models/inventory.model';
 import { Backup, Company, DocumentFilters, DocumentRow } from './documents.model';
 
@@ -18,6 +19,10 @@ export class DocumentsService {
     });
     return this.http.get<ApiResponse<DocumentRow[]>>(`${this.api}/documents`, { params }).pipe(map(({ data }) => data));
   }
+  getDocumentsPage(query: DocumentFilters & PageParams): Observable<Page<DocumentRow>> {
+    return getPage(this.http, `${this.api}/documents`, query);
+  }
+
 
   getMovement(id: string): Observable<Movement & { number: number | null }> {
     return this.http

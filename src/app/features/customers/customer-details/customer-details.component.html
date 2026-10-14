@@ -17,7 +17,7 @@
           <a [routerLink]="['/customers', c.id, 'invoices', 'new']" class="btn-primary">فاتورة بيع</a>
           <a [routerLink]="['/customers', c.id, 'returns', 'new']" class="btn-outline">فاتورة مرتجع</a>
         }
-        <a [routerLink]="['/customers', c.id, 'collections', 'new']" class="btn-accent">فاتورة تحصيل</a>
+        <a [routerLink]="['/customers', c.id, 'collections', 'new']" class="btn-primary">فاتورة تحصيل</a>
         @if (isManager) {
           <app-share-link resource="customers" [id]="c.id" />
         }
@@ -47,7 +47,7 @@
             <label for="reason" class="form-label">سبب الرفض</label>
             <textarea id="reason" rows="2" class="form-input" [formControl]="rejectReason"></textarea>
             <div class="flex gap-3">
-              <button type="button" class="btn-accent" [disabled]="rejectReason.invalid || pending()" (click)="reject()">تأكيد الرفض</button>
+              <button type="button" class="btn-primary" [disabled]="rejectReason.invalid || pending()" (click)="reject()">تأكيد الرفض</button>
               <button type="button" class="btn-outline" (click)="showReject.set(false)">إلغاء</button>
             </div>
           </div>
@@ -67,7 +67,7 @@
       <div class="card" [class.border-soft-apricot-700]="c.pendingPayments > 0">
         <p class="text-sm text-stormy-teal">تحت التسليم</p>
         <p class="mt-2 text-xl font-bold" [class.text-soft-apricot-300]="c.pendingPayments > 0">{{ c.pendingPayments | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
-        <p class="text-xs text-stormy-teal">مع المندوب، تتخصم عند التسليم</p>
+        <p class="text-xs text-stormy-teal">مع المندوب، متخصومة من المديونية</p>
       </div>
       @if (c.paymentTermDays != null || c.discountPercent || c.overdue) {
         <div class="card" [class.border-vibrant-coral-400]="(c.overdue ?? 0) > 0">
@@ -135,7 +135,7 @@
             <dd class="font-semibold">
               {{ c.address ?? '—' }}
               @if (mapsUrl(); as url) {
-                <a [href]="url" target="_blank" rel="noopener" class="ms-2 font-normal text-vibrant-coral-400 hover:underline">الخريطة</a>
+                <a [href]="url" target="_blank" rel="noopener" class="ms-2 font-normal text-stormy-teal hover:underline">الخريطة</a>
               }
             </dd>
           </div>
@@ -176,16 +176,21 @@
     </div>
 
     <!-- Statement: invoices + collections -->
-    <div class="space-y-3">
-      <h2 class="text-lg font-semibold">{{ isManager ? 'كشف الحساب' : 'فواتيري وتحصيلاتي لهذا العميل' }}</h2>
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">
+          {{ isManager ? 'كشف الحساب' : 'فواتيري وتحصيلاتي لهذا العميل' }}
+          <span class="text-sm font-normal text-stormy-teal">· {{ statement.value()?.length ?? 0 }}</span>
+        </h2>
+      </summary>
       @if (statement.isLoading() && !statement.hasValue()) {
-        <app-status-message type="loading" message="جاري تحميل الحركات..." />
+        <app-status-message class="m-4 block" type="loading" message="جاري تحميل الحركات..." />
       } @else if (statement.error()) {
-        <app-status-message type="error" message="حدث خطأ أثناء تحميل الحركات." (retry)="statement.reload()" />
+        <app-status-message class="m-4 block" type="error" message="حدث خطأ أثناء تحميل الحركات." (retry)="statement.reload()" />
       } @else if (!statement.value()?.length) {
-        <app-status-message type="empty" message="لا توجد فواتير أو تحصيلات أو مرتجعات لهذا العميل." />
+        <p class="px-4 py-6 text-center text-sm text-stormy-teal">لا توجد فواتير أو تحصيلات أو مرتجعات لهذا العميل.</p>
       } @else {
-        <div class="card overflow-x-auto p-0">
+        <app-pager [(page)]="statementPage" [(limit)]="statementLimit" [total]="statement.value()!.length">
           <table class="w-full text-right text-sm">
             <thead class="table-head">
               <tr>
@@ -201,11 +206,11 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-stormy-teal-900">
-              @for (line of statement.value(); track line.kind + line.id) {
+              @for (line of statementRows(); track line.kind + line.id) {
                 <tr class="cursor-pointer transition hover:bg-alabaster-grey-800" [class.opacity-60]="line.cancelled" (click)="openLine(line)">
                   <td class="whitespace-nowrap px-4 py-3">{{ line.date | date: 'd MMM y' }}</td>
                   <td class="px-4 py-3">
-                    <a [routerLink]="lineLink(line)" class="font-semibold hover:text-vibrant-coral-400 hover:underline">
+                    <a [routerLink]="lineLink(line)" class="font-semibold hover:text-stormy-teal hover:underline">
                       {{ lineLabels[line.kind] }} <span dir="ltr">{{ line.number }}</span>
                     </a>
                     @if (line.cancelled) {
@@ -227,8 +232,8 @@
               }
             </tbody>
           </table>
-        </div>
+        </app-pager>
       }
-    </div>
+    </details>
   }
 </section>

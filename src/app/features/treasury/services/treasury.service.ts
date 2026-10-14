@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
+import { getPage } from '../../../shared/paged';
 import {
   CashBox,
   ChequeStatus,
@@ -42,6 +43,10 @@ export class TreasuryService {
       .pipe(map(({ data }) => data));
   }
 
+  getDepositsPage(query: PageParams): Observable<Page<Deposit>> {
+    return getPage(this.http, `${this.url}/deposits`, query);
+  }
+
   getDeposit(id: string): Observable<DepositDetails> {
     return this.http.get<ApiResponse<DepositDetails>>(`${this.url}/deposits/${id}`).pipe(map(({ data }) => data));
   }
@@ -62,6 +67,10 @@ export class TreasuryService {
       fromObject: { ...(filters.repId && { repId: filters.repId }), ...(filters.pending && { pending: 'true' }) },
     });
     return this.http.get<ApiResponse<TreasuryEntry[]>>(`${this.url}/entries`, { params }).pipe(map(({ data }) => data));
+  }
+
+  getEntriesPage(query: PageParams): Observable<Page<TreasuryEntry>> {
+    return getPage(this.http, `${this.url}/entries`, query);
   }
 
   /** A rep: an expense paid from their cash box (always cash; waits for the handover). */

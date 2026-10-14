@@ -3,7 +3,7 @@
     <div class="flex flex-wrap gap-4 text-sm">
       <a [routerLink]="['/customers', inv.customer.id]" class="text-stormy-teal hover:underline">→ العودة إلى العميل</a>
       @if (inv.visit) {
-        <a [routerLink]="['/visits', inv.visit.id]" class="text-vibrant-coral-400 hover:underline">→ العودة إلى الزيارة</a>
+        <a [routerLink]="['/visits', inv.visit.id]" class="text-stormy-teal hover:underline">→ العودة إلى الزيارة</a>
       }
     </div>
   }
@@ -45,7 +45,7 @@
         <textarea id="cancel-reason" rows="2" class="form-input" [formControl]="cancelReason"></textarea>
         <p class="text-xs text-stormy-teal">الإلغاء يرجع الكميات للمخزون ويحذف المبلغ من رصيد العميل.</p>
         <div class="flex gap-3">
-          <button type="button" class="btn-accent" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
+          <button type="button" class="btn-primary" [disabled]="cancelReason.invalid || cancelling()" (click)="cancel()">تأكيد الإلغاء</button>
           <button type="button" class="btn-outline" (click)="showCancel.set(false)">رجوع</button>
         </div>
         @if (cancelError(); as message) {
@@ -64,7 +64,7 @@
       <div>
         <dt class="text-sm text-stormy-teal">العميل</dt>
         <dd class="mt-1 font-semibold">
-          <a [routerLink]="['/customers', inv.customer.id]" class="hover:text-vibrant-coral-400 hover:underline">{{ inv.customer.name }}</a>
+          <a [routerLink]="['/customers', inv.customer.id]" class="hover:text-stormy-teal hover:underline">{{ inv.customer.name }}</a>
         </dd>
       </div>
       <div>

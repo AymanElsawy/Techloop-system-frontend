@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
+import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
+import { getPage } from '../../../shared/paged';
 import { GeoLocation } from '../../../core/services/geolocation';
 import { CompleteVisitRequest, CreateVisitRequest, Visit, VisitFilters } from '../models/visit.model';
 
@@ -16,6 +17,10 @@ export class VisitService {
     const params = new HttpParams({ fromObject: { ...filters } });
     return this.http.get<ApiResponse<Visit[]>>(this.url, { params }).pipe(map(({ data }) => data));
   }
+  getVisitsPage(query: VisitFilters & PageParams): Observable<Page<Visit>> {
+    return getPage(this.http, this.url, query);
+  }
+
 
   getVisit(id: string): Observable<Visit> {
     return this.http.get<ApiResponse<Visit>>(`${this.url}/${id}`).pipe(map(({ data }) => data));

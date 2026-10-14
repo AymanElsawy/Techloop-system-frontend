@@ -223,7 +223,7 @@
       <div class="card overflow-x-auto p-0">
         <div class="flex items-center justify-between border-b border-stormy-teal-900 px-4 py-3">
           <h2 class="font-semibold">أداء المناديب هذا الشهر</h2>
-          <a routerLink="/targets" class="text-sm font-medium text-vibrant-coral-400 hover:underline">التارجت والعمولات</a>
+          <a routerLink="/targets" class="text-sm font-medium text-stormy-teal hover:underline">التارجت والعمولات</a>
         </div>
         @if (reps.length) {
           <table class="w-full text-sm">
@@ -270,7 +270,7 @@
                   <td class="px-4 py-2">{{ r.visitsToday }}</td>
                   <td class="px-4 py-2">
                     @if (r.cashHeld) {
-                      <a [routerLink]="['/treasury/handover', r.id]" class="font-semibold text-vibrant-coral-400 hover:underline">
+                      <a [routerLink]="['/treasury/handover', r.id]" class="font-semibold text-stormy-teal hover:underline">
                         {{ r.cashHeld | currency: 'EGP' : 'symbol' : '1.0-2' }}
                       </a>
                     } @else {

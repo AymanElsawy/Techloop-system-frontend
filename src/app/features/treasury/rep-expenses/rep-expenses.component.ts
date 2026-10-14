@@ -67,7 +67,7 @@ import { TreasuryService } from '../services/treasury.service';
               </span>
               <span class="font-semibold tabular-nums">{{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
               @if (e.status === 'ACTIVE' && e.depositStatus === DepositStatus.PENDING) {
-                <button type="button" class="text-xs text-vibrant-coral-400 hover:underline" (click)="cancel(e)">إلغاء</button>
+                <button type="button" class="text-xs text-stormy-teal hover:underline" (click)="cancel(e)">إلغاء</button>
               }
             </li>
           }

@@ -7,7 +7,9 @@ import { of } from 'rxjs';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
+import { pagedResource } from '../../../shared/paged';
 import { PAYMENT_METHOD_LABELS } from '../../invoices/models/invoice.model';
 import { BUCKET_LABELS, sumPayments, totalsByMethod } from '../models/treasury.model';
 import { TreasuryService } from '../services/treasury.service';
@@ -18,7 +20,7 @@ import { RepExpensesComponent } from '../rep-expenses/rep-expenses.component';
 /** /treasury — managers: company treasury + reps' cash boxes; a rep: their own cash box. */
 @Component({
   selector: 'app-treasury-home',
-  imports: [CurrencyPipe, DatePipe, PaymentsTableComponent, RouterLink, StatusMessageComponent, TreasuryOutflowsComponent, RepExpensesComponent],
+  imports: [CurrencyPipe, DatePipe, PagerComponent, PaymentsTableComponent, RouterLink, StatusMessageComponent, TreasuryOutflowsComponent, RepExpensesComponent],
   templateUrl: './treasury-home.component.html',
 })
 export class TreasuryHomeComponent {
@@ -34,7 +36,7 @@ export class TreasuryHomeComponent {
   protected readonly pending = rxResource({
     stream: () => (this.isManager ? of([]) : this.treasury.getPending()),
   });
-  protected readonly deposits = rxResource({ stream: () => this.treasury.getDeposits() });
+  protected readonly deposits = pagedResource(() => ({}), (params) => this.treasury.getDepositsPage(params));
   /** A rep: collected minus their expenses not handed over yet. */
   protected readonly cashBox = rxResource({
     stream: () => (this.isManager ? of(null) : this.treasury.getCashBox()),

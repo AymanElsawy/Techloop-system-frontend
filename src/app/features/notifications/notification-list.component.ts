@@ -2,28 +2,28 @@ import { Component, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { DatePipe } from '../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
-import { NotificationsService, notificationLink, notificationTitle } from './notifications.service';
+import { pagedResource } from '../../shared/paged';
+import { BALANCES_FIXED, NotificationsService, notificationLink, notificationTitle } from './notifications.service';
 
 /** /notifications — latest changes; opening the page marks them all read. */
 @Component({
   selector: 'app-notification-list',
-  imports: [CurrencyPipe, DatePipe, RouterLink, StatusMessageComponent],
+  imports: [CurrencyPipe, DatePipe, PagerComponent, RouterLink, StatusMessageComponent],
   template: `
     <section class="space-y-6">
       <h1 class="text-2xl font-bold">الإشعارات</h1>
 
-      @if (list.isLoading() && !list.hasValue()) {
-        <app-status-message type="loading" message="جاري تحميل الإشعارات..." />
-      } @else if (list.error()) {
-        <app-status-message type="error" message="حدث خطأ أثناء تحميل الإشعارات." (retry)="list.reload()" />
-      } @else if (list.value(); as items) {
-        @if (items.length) {
-          <ul class="card divide-y divide-stormy-teal-900 p-0">
-            @for (n of items; track n.id) {
+      @if (list.resource.error()) {
+        <app-status-message type="error" message="حدث خطأ أثناء تحميل الإشعارات." (retry)="list.resource.reload()" />
+      } @else if (list.value(); as page) {
+        @if (page.total) {
+          <app-pager [(page)]="list.page" [(limit)]="list.limit" [total]="page.total" [loading]="list.resource.isLoading()">
+          <ul class="divide-y divide-stormy-teal-900">
+            @for (n of page.items; track n.id) {
               <li>
                 <!-- routerLink null = not clickable (CASH_TAKEN) -->
                 <a [routerLink]="link(n)" class="flex items-start gap-3 px-4 py-3 transition hover:bg-stormy-teal-900/40" [class.pointer-events-none]="!link(n)">
@@ -42,11 +42,14 @@ import { NotificationsService, notificationLink, notificationTitle } from './not
                       @if (n.amount !== null) {
                         {{ n.amount | currency: 'EGP' : 'symbol' : '1.0-2' }} ·
                       }
-                      @if (n.quantity !== null) {
+                      @if (n.quantity !== null && n.type !== balancesFixed) {
                         الباقي {{ n.quantity }} ·
                       }
                       @if (n.expiryDate) {
                         الصلاحية {{ n.expiryDate | date: 'd/M/y' }} ·
+                      }
+                      @if (n.dueDate) {
+                        الاستحقاق {{ n.dueDate | date: 'd/M/y' }} ·
                       }
                       @if (n.actor) {
                         بواسطة {{ n.actor.name }} ·
@@ -58,9 +61,12 @@ import { NotificationsService, notificationLink, notificationTitle } from './not
               </li>
             }
           </ul>
+          </app-pager>
         } @else {
           <app-status-message type="empty" message="مفيش إشعارات لسه." />
         }
+      } @else {
+        <app-status-message type="loading" message="جاري تحميل الإشعارات..." />
       }
     </section>
   `,
@@ -69,9 +75,14 @@ export class NotificationListComponent {
   private readonly notifications = inject(NotificationsService);
 
   protected readonly title = notificationTitle;
+  protected readonly balancesFixed = BALANCES_FIXED;
   protected readonly link = notificationLink;
-  // The list keeps showing what was unread; the server marks everything read once it loads.
-  protected readonly list = rxResource({
-    stream: () => this.notifications.getNotifications().pipe(tap(() => this.notifications.markAllRead())),
-  });
+  // The list keeps showing what was unread; the server marks everything read once a page with unread ones loads.
+  protected readonly list = pagedResource(
+    () => ({}),
+    (params) =>
+      this.notifications
+        .getNotificationsPage(params)
+        .pipe(tap(({ items }) => items.some((n) => !n.readAt) && this.notifications.markAllRead())),
+  );
 }

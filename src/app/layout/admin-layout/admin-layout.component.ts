@@ -71,6 +71,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: 'M17 20h5v-2a4 4 0 00-5-3.87M9 20H2v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0 3 3 0 016 0z',
     roles: [UserRole.OWNER, UserRole.ADMIN],
   },
+  {
+    label: 'سجل العمليات',
+    path: '/audit-log',
+    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    roles: [UserRole.OWNER],
+  },
 ];
 
 /** App shell: sidebar on desktop, drawer on mobile, header with the current user. */
