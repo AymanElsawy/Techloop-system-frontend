@@ -2,7 +2,7 @@
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">الموردين</h1>
     <div class="flex flex-wrap gap-3">
-      <a routerLink="/inventory/receive" class="btn-outline">وارد جديد</a>
+      <a routerLink="/documents/purchases/new" class="btn-outline">وارد جديد</a>
       @if (!showForm()) {
         <button type="button" class="btn-primary" (click)="showForm.set(true)">مورد جديد</button>
       }

@@ -19,9 +19,9 @@ export function getPage<T>(http: HttpClient, url: string, query: object): Observ
  * A paged list for a table: changing the filters or the page size goes back to page 1.
  * Call from a field initializer (injection context).
  */
-export function pagedResource<F extends object, T>(
+export function pagedResource<F extends object, P extends Page<unknown>>(
   filters: () => F,
-  load: (params: F & PageParams) => Observable<Page<T>>,
+  load: (params: F & PageParams) => Observable<P>, // P: a Page, maybe with extra totals
 ) {
   const limit = signal(20);
   const page = linkedSignal({ source: () => ({ ...filters(), limit: limit() }), computation: () => 1 });
@@ -30,7 +30,7 @@ export function pagedResource<F extends object, T>(
     stream: ({ params }) => load(params),
   });
   /** rxResource drops its value when the params change; keep the last page on screen while the next one loads. */
-  const value = linkedSignal<Page<T> | undefined, Page<T> | undefined>({
+  const value = linkedSignal<P | undefined, P | undefined>({
     source: () => (resource.hasValue() ? resource.value() : undefined),
     computation: (next, prev) => next ?? prev?.value,
   });

@@ -40,6 +40,20 @@ export const PARTY_LABELS: Record<DocumentType, string> = {
   [DocumentType.DEPOSIT]: 'المندوب',
 };
 
+/**
+ * "إنشاء" from the documents tab opens the existing form of each type. `party` must be picked first
+ * (the forms live under the customer / rep); its id goes into `link`.
+ */
+export const DOCUMENT_CREATE: Record<DocumentType, { party?: 'customer' | 'rep'; link: (id: string) => string }> = {
+  [DocumentType.SALE]: { party: 'customer', link: (id) => `/customers/${id}/invoices/new` },
+  [DocumentType.SALE_RETURN]: { party: 'customer', link: (id) => `/customers/${id}/returns/new` },
+  [DocumentType.COLLECTION]: { party: 'customer', link: (id) => `/customers/${id}/collections/new` },
+  [DocumentType.PURCHASE]: { link: () => '/documents/purchases/new' },
+  [DocumentType.ISSUE]: { link: () => '/inventory/move?type=ISSUE' },
+  [DocumentType.RETURN]: { link: () => '/inventory/move?type=RETURN' },
+  [DocumentType.DEPOSIT]: { party: 'rep', link: (id) => `/treasury/handover/${id}` },
+};
+
 type Ref = { id: string; name: string } | null;
 
 export interface DocumentRow {
@@ -71,6 +85,8 @@ export interface Company {
   taxNumber: string | null;
   commercialRegister: string | null;
   footer: string | null;
+  /** data URL (PNG/JPEG), printed in the header. */
+  logo: string | null;
 }
 
 /** App page with the full details of a document. */

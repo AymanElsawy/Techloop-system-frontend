@@ -11,7 +11,8 @@ import { ApiResponse } from '../../core/models/api-response';
 import { UserRole } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
-import { PAYMENT_METHOD_LABELS, PaymentMethod } from '../invoices/models/invoice.model';
+import { PaymentMethod } from '../invoices/models/invoice.model';
+import { BUCKET_LABELS } from '../treasury/models/treasury.model';
 import { VISIT_STATUS_CLASSES, VISIT_STATUS_LABELS, VisitStatus } from '../visits/models/visit.model';
 import { DepositStatus } from '../treasury/models/treasury.model';
 
@@ -71,7 +72,7 @@ export class DashboardComponent {
   protected readonly isManager = this.auth.hasRole(UserRole.OWNER, UserRole.ADMIN);
   protected readonly userName = computed(() => this.auth.currentUser()?.name ?? '');
   protected readonly today = new Date();
-  protected readonly methodLabels = PAYMENT_METHOD_LABELS;
+  protected readonly bucketLabels = BUCKET_LABELS;
   protected readonly visitLabels = VISIT_STATUS_LABELS;
   protected readonly visitClasses = VISIT_STATUS_CLASSES;
   protected readonly visitStatuses = Object.values(VisitStatus).filter((s) => s !== VisitStatus.CANCELLED);

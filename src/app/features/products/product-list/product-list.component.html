@@ -15,7 +15,7 @@
       <p class="font-semibold">صنف جديد</p>
       <p class="text-sm text-stormy-teal">صنف أول مرة يدخل المخزن.</p>
     </a>
-    <a routerLink="/inventory/receive" class="block rounded-lg border border-stormy-teal-800 p-4 hover:bg-alabaster-grey-800"
+    <a routerLink="/documents/purchases/new" class="block rounded-lg border border-stormy-teal-800 p-4 hover:bg-alabaster-grey-800"
       (click)="newDialog.close()">
       <p class="font-semibold">صنف موجود من مورد آخر</p>
       <p class="text-sm text-stormy-teal">زوّد الكمية بسعر المورد الجديد، ومتوسط السعر يتحسب تلقائي.</p>
@@ -149,7 +149,7 @@
                     <a [routerLink]="['/inventory/products', p.id, 'edit']" class="text-stormy-teal hover:underline">تعديل</a>
                     <a [routerLink]="['/inventory/products', p.id]" class="text-stormy-teal hover:underline">المشتريات</a>
                     @if (p.isActive) {
-                      <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="text-stormy-teal hover:underline">وارد</a>
+                      <a routerLink="/documents/purchases/new" [queryParams]="{ productId: p.id }" class="text-stormy-teal hover:underline">وارد</a>
                     }
                     <button type="button" (click)="deleteProduct(p)" class="text-stormy-teal hover:underline">حذف</button>
                   </div>

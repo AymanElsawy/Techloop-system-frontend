@@ -2,7 +2,6 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
-import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 
@@ -13,10 +12,10 @@ import { StatusMessageComponent } from '../../../shared/components/status-messag
 import { Backup, Company } from '../documents.model';
 import { DocumentsService } from '../documents.service';
 
-/** /documents/company — details printed on every document. Managers only. */
+/** /company — details printed on every document. Managers only. */
 @Component({
   selector: 'app-company-form',
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, RouterLink, StatusMessageComponent],
+  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, StatusMessageComponent],
   templateUrl: './company-form.component.html',
 })
 export class CompanyFormComponent {
@@ -31,6 +30,7 @@ export class CompanyFormComponent {
     commercialRegister: [''],
     footer: [''],
   });
+  protected readonly logo = signal<string | null>(null);
   protected readonly saving = signal(false);
 
   // Backups: owner only.
@@ -46,7 +46,9 @@ export class CompanyFormComponent {
   constructor() {
     effect(() => {
       const c = this.company.value();
-      if (c) this.form.reset(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v ?? ''])));
+      if (!c) return;
+      this.form.reset(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v ?? ''])));
+      this.logo.set(c.logo);
     });
   }
 
@@ -54,7 +56,7 @@ export class CompanyFormComponent {
     if (this.form.invalid) return this.form.markAllAsTouched();
     this.saving.set(true);
     this.message.set(null);
-    this.documents.updateCompany(this.form.getRawValue() as Company).subscribe({
+    this.documents.updateCompany({ ...this.form.getRawValue(), logo: this.logo() } as Company).subscribe({
       next: () => {
         this.saving.set(false);
         this.message.set({ ok: true, text: 'اتحفظت. هتظهر على كل الفواتير.' });
@@ -64,6 +66,20 @@ export class CompanyFormComponent {
         this.message.set({ ok: false, text: httpErrorMessage(err) });
       },
     });
+  }
+
+  protected pickLogo(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 300 * 1024) {
+      this.message.set({ ok: false, text: 'اللوجو لازم يكون PNG أو JPG وأقل من 300 كيلوبايت.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.logo.set(reader.result as string);
+    reader.readAsDataURL(file);
   }
 
   protected backupNow(): void {

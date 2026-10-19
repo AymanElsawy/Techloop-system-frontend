@@ -153,6 +153,16 @@ export const routes: Routes = [
           ),
       },
       {
+        // From the documents tab: the warehouse is picked in the form.
+        path: 'inventory/move',
+        title: 'حركة مخزن',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN, UserRole.WAREHOUSE_REP)],
+        loadComponent: () =>
+          import('./features/inventory/stock-move-form/stock-move-form.component').then(
+            (m) => m.StockMoveFormComponent,
+          ),
+      },
+      {
         path: 'inventory/warehouses/:id/count',
         title: 'جرد المخزن',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
@@ -188,15 +198,8 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/products/product-form/product-form.component').then((m) => m.ProductFormComponent),
       },
-      {
-        path: 'inventory/receive',
-        title: 'وارد من مورد',
-        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
-        loadComponent: () =>
-          import('./features/inventory/stock-move-form/stock-move-form.component').then(
-            (m) => m.StockMoveFormComponent,
-          ),
-      },
+      // Old link (bookmarks): receipts moved to the purchase form; query params carry over.
+      { path: 'inventory/receive', redirectTo: 'documents/purchases/new' },
       {
         path: 'suppliers',
         title: 'الموردين',
@@ -234,11 +237,18 @@ export const routes: Routes = [
           import('./features/documents/document-list/document-list.component').then((m) => m.DocumentListComponent),
       },
       {
-        path: 'documents/company',
+        path: 'company',
         title: 'بيانات الشركة',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () =>
           import('./features/documents/company-form/company-form.component').then((m) => m.CompanyFormComponent),
+      },
+      {
+        path: 'documents/purchases/new',
+        title: 'فاتورة شراء جديدة',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () =>
+          import('./features/documents/purchase-form/purchase-form.component').then((m) => m.PurchaseFormComponent),
       },
       {
         path: 'documents/:type/:id',
@@ -252,6 +262,13 @@ export const routes: Routes = [
         title: 'الخزنة',
         loadComponent: () =>
           import('./features/treasury/treasury-home/treasury-home.component').then((m) => m.TreasuryHomeComponent),
+      },
+      {
+        path: 'treasury/ledger',
+        title: 'حركة الخزنة',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () =>
+          import('./features/treasury/ledger/ledger.component').then((m) => m.TreasuryLedgerComponent),
       },
       {
         path: 'treasury/handover/:repId',

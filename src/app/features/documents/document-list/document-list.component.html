@@ -5,9 +5,31 @@
       <p class="mt-1 text-sm text-stormy-teal">كل عملية في النظام ليها مستند تقدر تطبعه A4 أو تحفظه PDF.</p>
     </div>
     @if (isManager) {
-      <a routerLink="/documents/company" class="btn-outline">بيانات الشركة على الفواتير</a>
+      <div class="flex flex-wrap gap-2">
+        @if (type() && !picking()) {
+          <button type="button" class="btn-primary" (click)="create()">+ إنشاء {{ createLabel() }}</button>
+        }
+      </div>
     }
   </div>
+
+  @if (picking()) {
+    <div class="card flex flex-wrap items-end gap-3">
+      <div class="min-w-64 flex-1">
+        <label for="doc-party" class="form-label">{{ createParty() === 'rep' ? 'اختر المندوب' : 'اختر العميل' }} — {{ createLabel() }}</label>
+        <select id="doc-party" class="form-input" (change)="openFor(value($event))">
+          <option value="">{{ parties.isLoading() ? 'جاري التحميل...' : parties.error() ? 'تعذر التحميل' : createParty() === 'rep' ? 'اختر المندوب' : 'اختر العميل' }}</option>
+          @for (p of parties.value() ?? []; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+        @if (parties.error()) {
+          <button type="button" class="mt-1 text-xs text-stormy-teal underline" (click)="parties.reload()">إعادة المحاولة</button>
+        }
+      </div>
+      <button type="button" class="btn-outline" (click)="picking.set(false)">إلغاء</button>
+    </div>
+  }
 
   <!-- Type tabs -->
   <div class="flex flex-wrap gap-2" role="group" aria-label="نوع المستند">

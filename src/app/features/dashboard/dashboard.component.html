@@ -6,7 +6,7 @@
     </div>
     <div class="flex flex-wrap gap-2">
       @if (isManager) {
-        <a routerLink="/inventory/receive" class="btn-outline">وارد من مورد</a>
+        <a routerLink="/documents/purchases/new" class="btn-outline">وارد من مورد</a>
         <a routerLink="/treasury" class="btn-outline">الخزنة</a>
       } @else {
         <a routerLink="/customers" class="btn-outline">العملاء</a>
@@ -59,7 +59,7 @@
           <ul class="mt-3 space-y-0.5 border-t border-yale-blue-400 pt-2 text-xs">
             @for (m of t.byMethod; track m.method) {
               <li class="flex justify-between gap-2">
-                <span class="text-yale-blue-800">{{ methodLabels[m.method] }}</span>
+                <span class="text-yale-blue-800">{{ bucketLabels[m.method] }}</span>
                 <span class="tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-0' }}</span>
               </li>
             }
@@ -367,7 +367,7 @@
                 <p class="font-medium">{{ p.name }}</p>
                 <p class="text-xs text-stormy-teal">الموجود {{ p.quantity | number }} · الحد الأدنى {{ p.minQuantity | number }}</p>
               </div>
-              <a [routerLink]="['/inventory/receive']" [queryParams]="{ productId: p.id }" class="btn-outline">وارد</a>
+              <a routerLink="/documents/purchases/new" [queryParams]="{ productId: p.id }" class="btn-outline">وارد</a>
             </li>
           }
         </ul>

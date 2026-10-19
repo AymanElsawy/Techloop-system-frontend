@@ -13,6 +13,7 @@ import {
   MovementFilters,
   MovementType,
   MyStock,
+  PurchaseItemInput,
   StockItemInput,
   Warehouse,
   WarehouseDetails,
@@ -20,7 +21,6 @@ import {
 } from '../models/inventory.model';
 
 const MOVE_PATH: Record<ManualMovement, string> = {
-  [MovementType.RECEIVE]: 'receive',
   [MovementType.ISSUE]: 'issue',
   [MovementType.RETURN]: 'return',
   [MovementType.TRANSFER]: 'transfer',
@@ -47,21 +47,29 @@ export class InventoryService {
     return this.http.patch<ApiResponse<Warehouse>>(`${this.url}/warehouses/${id}`, data).pipe(map(({ data }) => data));
   }
 
-  /** RECEIVE needs no rep; ISSUE and RETURN do. */
+  /** ISSUE and RETURN need a rep; TRANSFER a target warehouse. */
   move(
     warehouseId: string,
     type: ManualMovement,
     data: {
       repId?: string;
-      supplierId?: string;
+      toWarehouseId?: string;
       items: StockItemInput[];
-      /** RECEIVE only: what's actually paid now; the rest becomes supplier debt. */
-      paidAmount?: number;
       notes?: string | null;
     },
   ): Observable<Movement> {
     return this.http
       .post<ApiResponse<Movement>>(`${this.url}/warehouses/${warehouseId}/${MOVE_PATH[type]}`, data)
+      .pipe(map(({ data }) => data));
+  }
+
+  /** فاتورة شراء: saved as one receipt per supplier (returns them all). */
+  purchase(
+    warehouseId: string,
+    data: { items: PurchaseItemInput[]; payments: { supplierId: string; paidAmount: number }[]; notes: string | null },
+  ): Observable<Movement[]> {
+    return this.http
+      .post<ApiResponse<Movement[]>>(`${this.url}/warehouses/${warehouseId}/purchase`, data)
       .pipe(map(({ data }) => data));
   }
 

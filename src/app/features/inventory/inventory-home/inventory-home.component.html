@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold">المخزن</h1>
     @if (isAdmin) {
       <div class="flex flex-wrap gap-3">
-        <a routerLink="/inventory/receive" class="btn-primary">وارد من مورد</a>
+        <a routerLink="/documents/purchases/new" class="btn-primary">وارد من مورد</a>
         @if (!showForm()) {
           <button type="button" class="btn-outline" (click)="showForm.set(true)">مخزن جديد</button>
         }

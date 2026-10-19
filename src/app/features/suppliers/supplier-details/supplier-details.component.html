@@ -15,7 +15,7 @@
       </div>
       <div class="flex flex-wrap gap-3">
         @if (s.isActive) {
-          <a routerLink="/inventory/receive" [queryParams]="{ supplierId: s.id }" class="btn-primary">وارد من المورد ده</a>
+          <a routerLink="/documents/purchases/new" [queryParams]="{ supplierId: s.id }" class="btn-primary">وارد من المورد ده</a>
           @if (s.debt > 0 && !paying()) {
             <button type="button" class="btn-outline" (click)="startPay()">تسجيل سداد</button>
           }

@@ -13,6 +13,7 @@ import {
   ChequeStatus,
   ENTRY_TYPE_LABELS,
   EXPENSE_CATEGORIES,
+  OUTFLOW_TYPES,
   Payment,
   TreasuryEntry,
   TreasuryEntryType,
@@ -20,11 +21,12 @@ import {
 } from '../models/treasury.model';
 import { TreasuryService } from '../services/treasury.service';
 import { PaymentsTableComponent } from '../payments-table/payments-table.component';
+import { CancelDialogComponent } from '../cancel-dialog/cancel-dialog.component';
 
 /** Managers: take money out of the treasury (expense / withdrawal / bank deposit) and settle cheques. */
 @Component({
   selector: 'app-treasury-outflows',
-  imports: [CurrencyPipe, DatePipe, PagerComponent, PaymentsTableComponent, StatusMessageComponent],
+  imports: [CancelDialogComponent, CurrencyPipe, DatePipe, PagerComponent, PaymentsTableComponent, StatusMessageComponent],
   template: `
     <details class="accordion">
       <summary><h2 class="font-semibold">صرف من الخزنة <span class="text-sm font-normal text-stormy-teal">· مصروف، سحب، إيداع في البنك</span></h2></summary>
@@ -144,12 +146,18 @@ import { PaymentsTableComponent } from '../payments-table/payments-table.compone
                     @if (e.status === 'CANCELLED') {
                       <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs font-medium text-vibrant-coral-300">ملغاة</span>
                     }
+                    @if (e.counted != null) {
+                      <p class="text-xs text-stormy-teal">اتعدّ {{ e.counted | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+                    }
                     @if (e.notes || e.cancelReason) {
                       <p class="text-xs text-stormy-teal">{{ e.cancelReason ? 'سبب الإلغاء: ' + e.cancelReason : e.notes }}</p>
                     }
                   </td>
                   <td class="px-4 py-3">{{ bucketLabels[e.paymentMethod] }}</td>
-                  <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold tabular-nums">
+                    <!-- An adjustment is signed (+ adds money); everything else here takes money out. -->
+                    {{ e.type === Type.ADJUSTMENT && e.amount > 0 ? '+' : '' }}{{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
                   <td class="px-4 py-3">{{ e.createdBy.name }}</td>
                   <td class="px-4 py-3">
                     @if (e.status === 'ACTIVE') {
@@ -165,6 +173,8 @@ import { PaymentsTableComponent } from '../payments-table/payments-table.compone
         <p class="px-4 py-6 text-center text-sm text-stormy-teal">لا يوجد صرف بعد.</p>
       }
     </details>
+
+    <app-cancel-dialog />
   `,
   host: { class: 'block space-y-6' },
 })
@@ -176,7 +186,7 @@ export class TreasuryOutflowsComponent {
   readonly changed = output<void>();
 
   protected readonly Type = TreasuryEntryType;
-  protected readonly types = Object.values(TreasuryEntryType);
+  protected readonly types = OUTFLOW_TYPES;
   protected readonly typeLabels = ENTRY_TYPE_LABELS;
   protected readonly bucketLabels = BUCKET_LABELS;
   protected readonly categories = EXPENSE_CATEGORIES;
@@ -185,6 +195,7 @@ export class TreasuryOutflowsComponent {
   protected readonly cheques = rxResource({ stream: () => this.treasury.getCheques() });
 
   protected readonly Cheque = ChequeStatus;
+  private readonly cancelDialog = viewChild.required(CancelDialogComponent);
   private readonly chequeDialog = viewChild.required<ElementRef<HTMLDialogElement>>('chequeDialog');
   protected readonly pendingCheque = signal<{ payment: Payment; status: ChequeStatus } | null>(null);
   protected readonly chequeSaving = signal(false);
@@ -198,16 +209,26 @@ export class TreasuryOutflowsComponent {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  /** Any bucket, even at zero or below; money already in the bank can't be deposited again. */
+  /**
+   * Any money bucket, even at zero or below. Never cheques: they move only by "اتصرف" / "مرتد".
+   * Money already in the bank can't be deposited again.
+   */
   protected readonly methods = computed(() =>
     Object.values(PaymentMethod).filter(
-      (m) => this.type() !== TreasuryEntryType.BANK_DEPOSIT || m !== PaymentMethod.BANK_TRANSFER,
+      (m) =>
+        m !== PaymentMethod.CHEQUE &&
+        (this.type() !== TreasuryEntryType.BANK_DEPOSIT || m !== PaymentMethod.BANK_TRANSFER),
     ),
   );
   protected readonly available = computed(
     () => this.summary().byMethod.find((m) => m.method === this.method())?.total ?? 0,
   );
   protected readonly valid = computed(() => this.amount() > 0);
+
+  /** After a count (جرد) made outside this section. */
+  reloadEntries(): void {
+    this.entries.resource.reload();
+  }
 
   protected open(type: TreasuryEntryType): void {
     this.type.set(type);
@@ -240,25 +261,20 @@ export class TreasuryOutflowsComponent {
         },
         error: (err: unknown) => {
           this.saving.set(false);
-          this.error.set(httpErrorMessage(err, 'المبلغ أكبر من المتاح في الخزنة. حدّث الصفحة وحاول مرة أخرى.'));
+          this.error.set(httpErrorMessage(err, 'تعذر الحفظ. حاول مرة أخرى.'));
         },
       });
   }
 
   protected cancel(entry: TreasuryEntry): void {
-    const reason = prompt(`سبب إلغاء ${ENTRY_TYPE_LABELS[entry.type]} #${entry.number}:`)?.trim();
-    if (!reason) return;
-    if (reason.length < 3) {
-      alert('السبب لازم يكون 3 حروف على الأقل.');
-      return;
-    }
-    this.treasury.cancelEntry(entry.id, reason).subscribe({
-      next: () => {
+    this.cancelDialog().open(
+      `إلغاء ${entry.rep ? 'مصروف مندوب' : ENTRY_TYPE_LABELS[entry.type]} #${entry.number}`,
+      (reason) => this.treasury.cancelEntry(entry.id, reason),
+      () => {
         this.entries.resource.reload();
         this.changed.emit();
       },
-      error: (err: unknown) => alert(httpErrorMessage(err)),
-    });
+    );
   }
 
   protected setCheque(pending: { payment: Payment; status: ChequeStatus }): void {

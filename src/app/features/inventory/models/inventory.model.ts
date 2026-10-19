@@ -37,7 +37,8 @@ export const MOVEMENT_TYPE_CLASSES: Record<MovementType, string> = {
 };
 
 /** Movement types a manager records by hand from a warehouse page. */
-export type ManualMovement = MovementType.RECEIVE | MovementType.ISSUE | MovementType.RETURN | MovementType.TRANSFER;
+/** Receipts go through `InventoryService.purchase()` (the purchase form). */
+export type ManualMovement = MovementType.ISSUE | MovementType.RETURN | MovementType.TRANSFER;
 
 export interface Warehouse {
   id: string;
@@ -116,11 +117,18 @@ export interface MovementFilters {
   productId?: string;
 }
 
+/** فاتورة شراء line: an existing product (`productId`) or a new one (`newProduct`), from any supplier. */
+export interface PurchaseItemInput {
+  productId?: string;
+  newProduct?: { name: string; price: number; unit: ProductUnit | null };
+  supplierId: string;
+  quantity: number;
+  unitCost: number;
+}
+
 export interface StockItemInput {
   productId: string;
   quantity: number;
-  /** Purchase price per unit; required for RECEIVE. */
-  unitCost?: number;
 }
 
 export type CustodyRequestStatus = 'PENDING' | 'ISSUED' | 'REJECTED' | 'CANCELLED';

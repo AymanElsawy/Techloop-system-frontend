@@ -1,7 +1,6 @@
 <section class="mx-auto max-w-2xl space-y-6">
   <div>
-    <a routerLink="/documents" class="text-sm text-stormy-teal hover:underline">→ الفواتير</a>
-    <h1 class="mt-1 text-2xl font-bold">بيانات الشركة على الفواتير</h1>
+    <h1 class="text-2xl font-bold">تعديل بيانات الشركة</h1>
     <p class="mt-1 text-sm text-stormy-teal">بتتطبع في رأس وذيل كل فاتورة وإيصال.</p>
   </div>
 
@@ -35,6 +34,22 @@
           <label class="form-label" for="c-cr">السجل التجاري</label>
           <input id="c-cr" class="form-input" formControlName="commercialRegister" dir="ltr" />
         </div>
+      </div>
+      <div>
+        <span class="form-label">اللوجو</span>
+        <div class="flex flex-wrap items-center gap-3">
+          @if (logo(); as src) {
+            <img [src]="src" alt="لوجو الشركة" class="max-h-20 max-w-40 rounded border border-stormy-teal-900 bg-white object-contain p-1" />
+          }
+          <label class="btn-outline cursor-pointer">
+            {{ logo() ? 'تغيير اللوجو' : 'رفع لوجو' }}
+            <input type="file" accept="image/png,image/jpeg" class="sr-only" (change)="pickLogo($event)" />
+          </label>
+          @if (logo()) {
+            <button type="button" class="text-sm text-vibrant-coral-300 hover:underline" (click)="logo.set(null)">حذف</button>
+          }
+        </div>
+        <p class="mt-1 text-xs text-stormy-teal">PNG أو JPG، أقصى حجم 300 كيلوبايت. بيظهر في رأس كل فاتورة.</p>
       </div>
       <div>
         <label class="form-label" for="c-footer">ملاحظة أسفل الفاتورة</label>

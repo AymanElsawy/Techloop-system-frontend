@@ -71,11 +71,18 @@ const NAV_ITEMS: NavItem[] = [
     icon: 'M17 20h5v-2a4 4 0 00-5-3.87M9 20H2v-2a4 4 0 015-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0 3 3 0 016 0z',
     roles: [UserRole.OWNER, UserRole.ADMIN],
   },
+ 
   {
     label: 'سجل العمليات',
     path: '/audit-log',
     icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
     roles: [UserRole.OWNER],
+  },
+  {
+    label: 'تعديل بيانات الشركة',
+    path: '/company',
+    icon: 'M3 21h18M5 21V5a1 1 0 011-1h8a1 1 0 011 1v16m0-10h3a1 1 0 011 1v9M9 8h2m-2 4h2m-2 4h2',
+    roles: [UserRole.OWNER, UserRole.ADMIN],
   },
 ];
 

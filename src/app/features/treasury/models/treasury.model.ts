@@ -47,12 +47,18 @@ export enum TreasuryEntryType {
   EXPENSE = 'EXPENSE',
   WITHDRAWAL = 'WITHDRAWAL',
   BANK_DEPOSIT = 'BANK_DEPOSIT',
+  /** تسوية جرد: signed (counted − balance), made by a count only. */
+  ADJUSTMENT = 'ADJUSTMENT',
 }
+
+/** What a manager can take out by hand (an adjustment comes from a count). */
+export const OUTFLOW_TYPES = [TreasuryEntryType.EXPENSE, TreasuryEntryType.WITHDRAWAL, TreasuryEntryType.BANK_DEPOSIT];
 
 export const ENTRY_TYPE_LABELS: Record<TreasuryEntryType, string> = {
   [TreasuryEntryType.EXPENSE]: 'مصروف',
   [TreasuryEntryType.WITHDRAWAL]: 'سحب',
   [TreasuryEntryType.BANK_DEPOSIT]: 'إيداع في البنك',
+  [TreasuryEntryType.ADJUSTMENT]: 'تسوية جرد',
 };
 
 /** Suggestions for the expense category (free text). */
@@ -63,7 +69,7 @@ export const BUCKET_LABELS: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'نقدي',
   [PaymentMethod.VODAFONE_CASH]: 'فودافون كاش',
   [PaymentMethod.BANK_TRANSFER]: 'البنك / تحويل',
-  [PaymentMethod.CHEQUE]: 'شيكات',
+  [PaymentMethod.CHEQUE]: 'شيكات لم تُصرف',
 };
 
 /** Money taken out of the treasury by a manager. */
@@ -74,6 +80,8 @@ export interface TreasuryEntry {
   amount: number;
   paymentMethod: PaymentMethod;
   category: string | null;
+  /** ADJUSTMENT only: what was counted. */
+  counted?: number | null;
   notes: string | null;
   status: 'ACTIVE' | 'CANCELLED';
   cancelReason: string | null;
@@ -84,6 +92,27 @@ export interface TreasuryEntry {
   depositStatus?: DepositStatus | null;
   deposit?: { id: string; number: number } | null;
   createdAt: string;
+}
+
+/** Real-money buckets (cheques aren't money until cashed). */
+export const MONEY_BUCKETS = [PaymentMethod.CASH, PaymentMethod.VODAFONE_CASH, PaymentMethod.BANK_TRANSFER];
+
+/** حركة الخزنة: one movement of real money; `amount` is + in / − out. */
+export interface LedgerRow {
+  date: string;
+  title: string;
+  party: string | null;
+  method: PaymentMethod;
+  amount: number;
+  balance: number;
+  ref: { type: 'DEPOSIT' | 'INVOICE' | 'COLLECTION' | 'SUPPLIER' | 'MOVEMENT'; id: string } | null;
+}
+
+export interface LedgerTotals {
+  opening: number;
+  inflow: number;
+  outflow: number;
+  closing: number;
 }
 
 export interface Deposit {

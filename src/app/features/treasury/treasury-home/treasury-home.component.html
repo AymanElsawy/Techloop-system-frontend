@@ -15,14 +15,31 @@
         </div>
         <ul class="flex flex-wrap gap-x-8 gap-y-3 border-yale-blue-400 sm:border-s sm:ps-10">
           @for (m of s.byMethod; track m.method) {
-            <li>
-              <p class="text-sm text-yale-blue-800">{{ bucketLabels[m.method] }}</p>
-              <p class="mt-1 text-lg font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
-            </li>
+            @if (m.method !== 'CHEQUE') {
+              <li>
+                <p class="text-sm text-yale-blue-800">{{ bucketLabels[m.method] }}</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+              </li>
+            }
           }
         </ul>
-        <p class="w-full text-xs text-yale-blue-800">بعد خصم المصروفات والسحب ومدفوعات الموردين (من 30 سبتمبر 2026).</p>
+        @if (openCheques(); as c) {
+          <!-- Not money yet: shown beside the balance, never added to it. -->
+          <div class="sm:border-s sm:border-yale-blue-400 sm:ps-10">
+            <p class="text-sm text-yale-blue-800">{{ bucketLabels[c.method] }} ({{ c.count }})</p>
+            <p class="mt-1 text-lg font-semibold tabular-nums">{{ c.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
+            <p class="text-xs text-yale-blue-800">مش محسوبة في الرصيد لحد ما تتصرف</p>
+          </div>
+        }
+        <div class="flex w-full flex-wrap items-center justify-between gap-3">
+          <p class="text-xs text-yale-blue-800">الرصيد = اللي دخل − اللي خرج. لو مش مطابق للفلوس الفعلية اعمل جرد.</p>
+          <div class="flex gap-2">
+            <a routerLink="/treasury/ledger" class="btn-outline dark:border-orange dark:bg-transparent dark:text-orange dark:hover:bg-prussian-blue-600">حركة الخزنة</a>
+            <button type="button" class="btn-outline dark:border-orange dark:bg-transparent dark:text-orange dark:hover:bg-prussian-blue-600" (click)="countDialog.open()">جرد</button>
+          </div>
+        </div>
       </div>
+      <app-count-dialog #countDialog [summary]="s" (saved)="summary.reload(); outflows()?.reloadEntries()" />
 
       <details class="accordion">
         <summary>
@@ -74,7 +91,7 @@
           }
         </ul>
       </div>
-      <p class="text-sm text-stormy-teal">المبالغ دي بتتخصم من مديونية العميل لما الإدارة تستلمها منك.</p>
+      <p class="text-sm text-stormy-teal">المبالغ دي اتخصمت من مديونية العملاء خلاص، ولازم تسلّمها للإدارة.</p>
       <app-rep-expenses [cash]="cashBox.value()?.cash ?? 0" (changed)="cashBox.reload()" />
       @if (pending.value()?.length) {
         <app-payments-table [payments]="pending.value()!" />

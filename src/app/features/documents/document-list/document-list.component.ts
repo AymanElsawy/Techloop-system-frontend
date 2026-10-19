@@ -1,16 +1,20 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
-import { RouterLink } from '@angular/router';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Observable, debounceTime, map } from 'rxjs';
 
 import { UserRole } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { pagedResource } from '../../../shared/paged';
+import { CustomerStatus } from '../../customers/models/customer.model';
+import { CustomerService } from '../../customers/services/customer.service';
+import { UserService } from '../../users/user.service';
 import {
+  DOCUMENT_CREATE,
   DOCUMENT_TYPE_CLASSES,
   DOCUMENT_TYPE_LABELS,
   DocumentFilters,
@@ -28,6 +32,9 @@ import { DocumentsService } from '../documents.service';
 })
 export class DocumentListComponent {
   private readonly documents = inject(DocumentsService);
+  private readonly router = inject(Router);
+  private readonly customerService = inject(CustomerService);
+  private readonly userService = inject(UserService);
 
   protected readonly isManager = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
   /** Reps never see purchases. */
@@ -52,6 +59,31 @@ export class DocumentListComponent {
     }),
     (params) => this.documents.getDocumentsPage(params),
   );
+
+  /** Picking the customer / rep a new document needs; closes when the tab changes. */
+  protected readonly picking = linkedSignal({ source: this.type, computation: () => false });
+  protected readonly createLabel = computed(() => (this.type() ? DOCUMENT_TYPE_LABELS[this.type() as DocumentType] : ''));
+  protected readonly createParty = computed(() => (this.type() ? DOCUMENT_CREATE[this.type() as DocumentType].party : undefined));
+  protected readonly parties = rxResource({
+    params: () => (this.picking() ? (this.type() as DocumentType) : undefined),
+    stream: ({ params: type }): Observable<{ id: string; name: string }[]> =>
+      DOCUMENT_CREATE[type].party === 'rep'
+        ? this.userService.getUsers().pipe(map((users) => users.filter((u) => u.role === UserRole.SALES_REP && u.isActive)))
+        : this.customerService.getCustomers().pipe(
+            // Rejected customers can still pay (collection) but not buy or return.
+            map((list) => list.filter((c) => type === DocumentType.COLLECTION || c.status !== CustomerStatus.REJECTED)),
+          ),
+  });
+
+  protected create(): void {
+    const type = this.type() as DocumentType;
+    if (DOCUMENT_CREATE[type].party) this.picking.set(true);
+    else this.router.navigateByUrl(DOCUMENT_CREATE[type].link(''));
+  }
+
+  protected openFor(partyId: string): void {
+    if (partyId) this.router.navigateByUrl(DOCUMENT_CREATE[this.type() as DocumentType].link(partyId));
+  }
 
   protected readonly hasFilters = computed(() => !!(this.type() || this.from() || this.to() || this.search()));
 

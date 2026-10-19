@@ -32,7 +32,7 @@ import { ProductService } from '../services/product.service';
           </div>
           <div class="flex gap-2">
             @if (p.isActive) {
-              <a routerLink="/inventory/receive" [queryParams]="{ productId: p.id }" class="btn-primary">وارد</a>
+              <a routerLink="/documents/purchases/new" [queryParams]="{ productId: p.id }" class="btn-primary">وارد</a>
             }
             <a [routerLink]="['/inventory/products', p.id, 'edit']" class="btn-outline">تعديل</a>
           </div>

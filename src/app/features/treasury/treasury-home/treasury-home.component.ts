@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, viewChild } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { DatePipe } from '../../../shared/date.pipe';
 import { RouterLink } from '@angular/router';
@@ -10,17 +10,18 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { PagerComponent } from '../../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { pagedResource } from '../../../shared/paged';
-import { PAYMENT_METHOD_LABELS } from '../../invoices/models/invoice.model';
+import { PAYMENT_METHOD_LABELS, PaymentMethod } from '../../invoices/models/invoice.model';
 import { BUCKET_LABELS, sumPayments, totalsByMethod } from '../models/treasury.model';
 import { TreasuryService } from '../services/treasury.service';
 import { PaymentsTableComponent } from '../payments-table/payments-table.component';
 import { TreasuryOutflowsComponent } from '../outflows/outflows.component';
 import { RepExpensesComponent } from '../rep-expenses/rep-expenses.component';
+import { CountDialogComponent } from '../count-dialog/count-dialog.component';
 
 /** /treasury — managers: company treasury + reps' cash boxes; a rep: their own cash box. */
 @Component({
   selector: 'app-treasury-home',
-  imports: [CurrencyPipe, DatePipe, PagerComponent, PaymentsTableComponent, RouterLink, StatusMessageComponent, TreasuryOutflowsComponent, RepExpensesComponent],
+  imports: [CountDialogComponent, CurrencyPipe, DatePipe, PagerComponent, PaymentsTableComponent, RouterLink, StatusMessageComponent, TreasuryOutflowsComponent, RepExpensesComponent],
   templateUrl: './treasury-home.component.html',
 })
 export class TreasuryHomeComponent {
@@ -29,6 +30,8 @@ export class TreasuryHomeComponent {
   protected readonly isManager = inject(AuthService).hasRole(UserRole.OWNER, UserRole.ADMIN);
   protected readonly methodLabels = PAYMENT_METHOD_LABELS;
   protected readonly bucketLabels = BUCKET_LABELS;
+
+  protected readonly outflows = viewChild(TreasuryOutflowsComponent);
 
   protected readonly summary = rxResource({
     stream: () => (this.isManager ? this.treasury.getSummary() : of(null)),
@@ -42,6 +45,10 @@ export class TreasuryHomeComponent {
     stream: () => (this.isManager ? of(null) : this.treasury.getCashBox()),
   });
 
+  /** Received cheques not cashed yet: not part of the balance. */
+  protected readonly openCheques = computed(() =>
+    this.summary.value()?.byMethod.find((m) => m.method === PaymentMethod.CHEQUE && (m.total || m.count)),
+  );
   protected readonly pendingTotal = computed(() => sumPayments(this.pending.value() ?? []));
   protected readonly pendingByMethod = computed(() => totalsByMethod(this.pending.value() ?? []));
   protected readonly repsTotal = computed(() =>

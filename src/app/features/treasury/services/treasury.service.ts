@@ -8,6 +8,8 @@ import { getPage } from '../../../shared/paged';
 import {
   CashBox,
   ChequeStatus,
+  LedgerRow,
+  LedgerTotals,
   Deposit,
   DepositDetails,
   Payment,
@@ -91,6 +93,23 @@ export class TreasuryService {
     notes: string | null;
   }): Observable<TreasuryEntry> {
     return this.http.post<ApiResponse<TreasuryEntry>>(`${this.url}/entries`, data).pipe(map(({ data }) => data));
+  }
+
+  /** جرد: the actual amount in a bucket; the difference is booked as an adjustment. */
+  count(data: { paymentMethod: PaymentMethod; counted: number; notes: string | null }): Observable<TreasuryEntry> {
+    return this.http.post<ApiResponse<TreasuryEntry>>(`${this.url}/count`, data).pipe(map(({ data }) => data));
+  }
+
+  /** حركة الخزنة: one page, newest first, plus the period's totals. */
+  getLedgerPage(
+    query: PageParams & { method?: PaymentMethod | ''; from?: string; to?: string },
+  ): Observable<Page<LedgerRow> & LedgerTotals> {
+    const params = new HttpParams({
+      fromObject: Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined && v !== '')),
+    });
+    return this.http
+      .get<ApiResponse<LedgerRow[]>>(`${this.url}/ledger`, { params })
+      .pipe(map(({ data, meta }) => ({ items: data, ...(meta as unknown as { total: number } & LedgerTotals) })));
   }
 
   cancelEntry(id: string, reason: string): Observable<TreasuryEntry> {

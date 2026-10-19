@@ -21,7 +21,7 @@
       <div class="flex flex-wrap gap-3">
         @if (d.warehouse.isActive) {
           @if (isAdmin) {
-            <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.RECEIVE }" class="btn-primary">وارد من مورد</a>
+            <a routerLink="/documents/purchases/new" [queryParams]="{ warehouseId: d.warehouse.id }" class="btn-primary">وارد من مورد</a>
           }
           <a [routerLink]="['/inventory/warehouses', d.warehouse.id, 'move']" [queryParams]="{ type: MovementType.ISSUE }" class="btn-primary">صرف لمندوب</a>
         }

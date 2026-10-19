@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal, viewChild } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 
@@ -6,11 +6,12 @@ import { httpErrorMessage } from '../../../core/http/http-error';
 import { StatusMessageComponent } from '../../../shared/components/status-message/status-message.component';
 import { DepositStatus, EXPENSE_CATEGORIES, TreasuryEntry } from '../models/treasury.model';
 import { TreasuryService } from '../services/treasury.service';
+import { CancelDialogComponent } from '../cancel-dialog/cancel-dialog.component';
 
 /** A rep's expenses paid from their cash box (بنزين، أكل…): taken off at the next handover. */
 @Component({
   selector: 'app-rep-expenses',
-  imports: [CurrencyPipe, DatePipe, StatusMessageComponent],
+  imports: [CancelDialogComponent, CurrencyPipe, DatePipe, StatusMessageComponent],
   template: `
     <div class="card space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -74,6 +75,7 @@ import { TreasuryService } from '../services/treasury.service';
         </ul>
       }
     </div>
+    <app-cancel-dialog />
   `,
 })
 export class RepExpensesComponent {
@@ -85,6 +87,7 @@ export class RepExpensesComponent {
 
   protected readonly DepositStatus = DepositStatus;
   protected readonly categories = EXPENSE_CATEGORIES;
+  private readonly cancelDialog = viewChild.required(CancelDialogComponent);
   protected readonly list = rxResource({ stream: () => this.treasury.getEntries() });
 
   protected readonly open = signal(false);
@@ -117,14 +120,13 @@ export class RepExpensesComponent {
   }
 
   protected cancel(e: TreasuryEntry): void {
-    const reason = prompt(`سبب إلغاء المصروف #${e.number}:`)?.trim();
-    if (!reason || reason.length < 3) return;
-    this.treasury.cancelEntry(e.id, reason).subscribe({
-      next: () => {
+    this.cancelDialog().open(
+      `إلغاء المصروف #${e.number}`,
+      (reason) => this.treasury.cancelEntry(e.id, reason),
+      () => {
         this.list.reload();
         this.changed.emit();
       },
-      error: (err: unknown) => alert(httpErrorMessage(err)),
-    });
+    );
   }
 }

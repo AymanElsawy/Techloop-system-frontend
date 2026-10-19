@@ -82,11 +82,16 @@ export function whatsappNumber(phone: string | null): string | null {
           class="mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col bg-white p-[12mm] text-[12px] leading-relaxed text-black shadow-lg print:min-h-0 print:max-w-none print:p-0 print:shadow-none"
         >
           <header class="flex items-start justify-between gap-6 border-b-2 border-black pb-4">
-            <div>
-              <p class="text-2xl font-bold">{{ v.company.name }}</p>
-              @for (line of companyLines(v.company); track line) {
-                <p class="text-xs text-gray-700"><bdi>{{ line }}</bdi></p>
+            <div class="flex items-start gap-3">
+              @if (v.company.logo) {
+                <img [src]="v.company.logo" alt="" class="max-h-20 max-w-32 object-contain" />
               }
+              <div>
+                <p class="text-2xl font-bold">{{ v.company.name }}</p>
+                @for (line of companyLines(v.company); track line) {
+                  <p class="text-xs text-gray-700"><bdi>{{ line }}</bdi></p>
+                }
+              </div>
             </div>
             <div class="text-left">
               <p class="text-xl font-bold">كشف حساب</p>
