@@ -66,7 +66,8 @@ export class InventoryService {
   /** فاتورة شراء: saved as one receipt per supplier (returns them all). */
   purchase(
     warehouseId: string,
-    data: { items: PurchaseItemInput[]; payments: { supplierId: string; paidAmount: number }[]; notes: string | null },
+    data: { items: PurchaseItemInput[]; /** Per supplier: by id, or by name for a new one. */
+      payments: { supplierId?: string; supplierName?: string; paidAmount: number }[]; notes: string | null },
   ): Observable<Movement[]> {
     return this.http
       .post<ApiResponse<Movement[]>>(`${this.url}/warehouses/${warehouseId}/purchase`, data)

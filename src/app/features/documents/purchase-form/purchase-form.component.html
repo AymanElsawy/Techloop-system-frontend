@@ -39,14 +39,14 @@
         }
       </datalist>
 
+      <datalist id="purchase-suppliers">
+        @for (s of suppliers.value() ?? []; track s.id) {
+          <option [value]="s.name">{{ s.phone ?? '' }}</option>
+        }
+      </datalist>
+
       <div class="card space-y-4">
         <h2 class="font-semibold">الأصناف</h2>
-        @if (suppliers.hasValue() && !suppliers.value().length) {
-          <p class="text-sm text-soft-apricot-300">
-            مفيش موردين.
-            <a routerLink="/suppliers" class="font-semibold hover:underline">أضف مورد</a> الأول.
-          </p>
-        }
         <div formArrayName="items" class="space-y-3">
           @for (row of items.controls; track row; let i = $index) {
             <div
@@ -66,13 +66,20 @@
                 />
               </div>
               <div class="sm:col-span-3">
-                <label [for]="'supplier-' + i" class="form-label">المورد</label>
-                <select [id]="'supplier-' + i" formControlName="supplierId" class="form-input">
-                  <option value="" disabled>اختر المورد</option>
-                  @for (s of suppliers.value() ?? []; track s.id) {
-                    <option [value]="s.id">{{ s.name }}</option>
+                <label [for]="'supplier-' + i" class="form-label">
+                  المورد
+                  @if (lineSuppliers()[i]?.isNew) {
+                    <span class="ms-1 text-xs font-semibold text-soft-apricot-300">(مورد جديد)</span>
                   }
-                </select>
+                </label>
+                <input
+                  [id]="'supplier-' + i"
+                  formControlName="supplierName"
+                  list="purchase-suppliers"
+                  class="form-input"
+                  autocomplete="off"
+                  placeholder="اكتب اسم المورد"
+                />
               </div>
               <div class="sm:col-span-2">
                 <label [for]="'qty-' + i" class="form-label">الكمية</label>
@@ -182,20 +189,20 @@
           <p class="text-xs text-stormy-teal">
             سيب الحقل فاضي لو مدفوع بالكامل. الباقي بيتسجل دين على الشركة عند المورد.
           </p>
-          @for (s of bySupplier(); track s.id) {
+          @for (s of bySupplier(); track s.id; let j = $index) {
             <div
               class="grid gap-2 rounded-lg border border-stormy-teal-900 p-3 sm:grid-cols-3 sm:items-center"
             >
               <p class="font-semibold">
-                {{ s.name }}
+                {{ s.name }}{{ s.isNew ? ' (مورد جديد)' : '' }}
                 <span class="block text-xs font-normal text-stormy-teal"
                   >الإجمالي {{ s.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span
                 >
               </p>
               <div>
-                <label [for]="'paid-' + s.id" class="sr-only">المدفوع الآن لـ {{ s.name }}</label>
+                <label [for]="'paid-' + j" class="sr-only">المدفوع الآن لـ {{ s.name }}</label>
                 <input
-                  [id]="'paid-' + s.id"
+                  [id]="'paid-' + j"
                   type="number"
                   min="0"
                   step="0.01"

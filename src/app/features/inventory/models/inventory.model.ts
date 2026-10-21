@@ -117,11 +117,15 @@ export interface MovementFilters {
   productId?: string;
 }
 
-/** فاتورة شراء line: an existing product (`productId`) or a new one (`newProduct`), from any supplier. */
+/**
+ * فاتورة شراء line: an existing product (`productId`) or a new one (`newProduct`), from an existing
+ * supplier (`supplierId`) or one typed by name (`newSupplier`, created unless the name exists).
+ */
 export interface PurchaseItemInput {
   productId?: string;
   newProduct?: { name: string; price: number; unit: ProductUnit | null };
-  supplierId: string;
+  supplierId?: string;
+  newSupplier?: { name: string };
   quantity: number;
   unitCost: number;
 }

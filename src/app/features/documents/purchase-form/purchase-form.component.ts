@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { CurrencyPipe, Location } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
@@ -22,7 +22,7 @@ const normalize = (name: string) => name.trim().toLowerCase();
  */
 @Component({
   selector: 'app-purchase-form',
-  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink],
+  imports: [CurrencyPipe, ReactiveFormsModule],
   templateUrl: './purchase-form.component.html',
 })
 export class PurchaseFormComponent implements OnInit {
@@ -67,6 +67,19 @@ export class PurchaseFormComponent implements OnInit {
     () => new Map((this.products.value() ?? []).map((p) => [normalize(p.name), p] as const)),
   );
 
+  private readonly supplierByName = computed(
+    () => new Map((this.suppliers.value() ?? []).map((s) => [normalize(s.name), s] as const)),
+  );
+  /** Each line's supplier: a known one by name, or a new one (`id` = `new:<name>` groups it). */
+  protected readonly lineSuppliers = computed(() =>
+    (this.value().items ?? []).map((i) => {
+      const name = (i.supplierName ?? '').trim();
+      if (name.length < 2) return null;
+      const known = this.supplierByName().get(normalize(name));
+      return known ? { id: known.id, name: known.name, isNew: false } : { id: `new:${normalize(name)}`, name, isNew: true };
+    }),
+  );
+
   /** The known product each line's name matches, or null (a new product). */
   protected readonly matches = computed(() =>
     (this.value().items ?? []).map(
@@ -98,17 +111,12 @@ export class PurchaseFormComponent implements OnInit {
 
   /** One row per supplier in the invoice, in line order. */
   protected readonly bySupplier = computed(() => {
-    const names = new Map((this.suppliers.value() ?? []).map((s) => [s.id, s.name]));
-    const rows = new Map<string, { id: string; name: string; total: number }>();
-    (this.value().items ?? []).forEach((i, index) => {
-      if (!i.supplierId) return;
-      const row = rows.get(i.supplierId) ?? {
-        id: i.supplierId,
-        name: names.get(i.supplierId) ?? '—',
-        total: 0,
-      };
+    const rows = new Map<string, { id: string; name: string; isNew: boolean; total: number }>();
+    this.lineSuppliers().forEach((s, index) => {
+      if (!s) return;
+      const row = rows.get(s.id) ?? { ...s, total: 0 };
       row.total = round2(row.total + this.lineTotals()[index]!);
-      rows.set(i.supplierId, row);
+      rows.set(s.id, row);
     });
     return [...rows.values()].map((r) => {
       const raw = this.paid()[r.id];
@@ -123,10 +131,10 @@ export class PurchaseFormComponent implements OnInit {
   /** The same existing product twice from the same supplier. */
   protected readonly duplicates = computed(() => {
     const seen = new Set<string>();
-    return (this.value().items ?? []).map((i, index) => {
+    return this.lineSuppliers().map((s, index) => {
       const p = this.matches()[index];
-      if (!p || !i.supplierId) return false;
-      const key = `${p.id}:${i.supplierId}`;
+      if (!p || !s) return false;
+      const key = `${p.id}:${s.id}`;
       const dup = seen.has(key);
       seen.add(key);
       return dup;
@@ -140,7 +148,7 @@ export class PurchaseFormComponent implements OnInit {
       items.every(
         (i, index) =>
           (i.name ?? '').trim().length >= 2 &&
-          !!i.supplierId &&
+          !!this.lineSuppliers()[index] &&
           Number.isInteger(Number(i.quantity)) &&
           Number(i.quantity) >= 1 &&
           !isBlank(i.unitCost) &&
@@ -164,10 +172,16 @@ export class PurchaseFormComponent implements OnInit {
       this.onNameChange(0);
       stop.destroy();
     });
+    // Same for a preselected supplier (from the supplier pages) once suppliers load.
+    const stopSupplier = effect(() => {
+      const s = this.suppliers.value()?.find((x) => x.id === this.supplierId());
+      if (!s) return;
+      this.items.at(0).controls.supplierName.setValue(s.name);
+      stopSupplier.destroy();
+    });
   }
 
   ngOnInit(): void {
-    if (this.supplierId()) this.items.at(0).controls.supplierId.setValue(this.supplierId()!);
     if (this.warehouseId()) this.form.controls.warehouseId.setValue(this.warehouseId()!);
   }
 
@@ -181,10 +195,11 @@ export class PurchaseFormComponent implements OnInit {
     return this.form.controls.items;
   }
 
-  private newItem(supplierId = '') {
+  private newItem(supplierName = '') {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-      supplierId: [supplierId, Validators.required],
+      // Typed: a known supplier's name picks it, any other name adds a new supplier.
+      supplierName: [supplierName, [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       quantity: [1, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]],
       unitCost: [null as number | null, [Validators.required, Validators.min(0)]],
       // New product only.
@@ -196,7 +211,7 @@ export class PurchaseFormComponent implements OnInit {
   /** A new line keeps the last line's supplier: most invoices are from one supplier. */
   protected addItem(): void {
     this.items.push(
-      this.newItem(this.items.at(this.items.length - 1)?.controls.supplierId.value ?? ''),
+      this.newItem(this.items.at(this.items.length - 1)?.controls.supplierName.value ?? ''),
     );
   }
 
@@ -210,9 +225,9 @@ export class PurchaseFormComponent implements OnInit {
     if (!p) return;
     const row = this.items.at(index).controls;
     if (row.unitCost.value === null && p.lastCost != null) row.unitCost.setValue(p.lastCost);
-    const supplier = p.supplier?.id ?? p.lastSupplier?.id;
-    if (!row.supplierId.value && supplier && this.suppliers.value()?.some((s) => s.id === supplier))
-      row.supplierId.setValue(supplier);
+    const supplier = p.supplier ?? p.lastSupplier;
+    if (!row.supplierName.value.trim() && supplier && this.suppliers.value()?.some((s) => s.id === supplier.id))
+      row.supplierName.setValue(supplier.name);
   }
 
   protected setPaid(supplierId: string, event: Event): void {
@@ -229,18 +244,19 @@ export class PurchaseFormComponent implements OnInit {
       .purchase(v.warehouseId, {
         items: v.items.map((i, index) => {
           const p = this.matches()[index];
+          const s = this.lineSuppliers()[index]!;
           return {
             ...(p
               ? { productId: p.id }
               : { newProduct: { name: i.name.trim(), price: Number(i.price), unit: i.unit } }),
-            supplierId: i.supplierId,
+            ...(s.isNew ? { newSupplier: { name: s.name } } : { supplierId: s.id }),
             quantity: Number(i.quantity),
             unitCost: Number(i.unitCost),
           };
         }),
         payments: this.bySupplier()
           .filter((s) => !isBlank(this.paid()[s.id]))
-          .map((s) => ({ supplierId: s.id, paidAmount: s.paid })),
+          .map((s) => ({ ...(s.isNew ? { supplierName: s.name } : { supplierId: s.id }), paidAmount: s.paid })),
         notes: v.notes.trim() || null,
       })
       .subscribe({

@@ -13,7 +13,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
 import { PaymentMethod } from '../invoices/models/invoice.model';
 import { BUCKET_LABELS } from '../treasury/models/treasury.model';
-import { VISIT_STATUS_CLASSES, VISIT_STATUS_LABELS, VisitStatus } from '../visits/models/visit.model';
+import {
+  VISIT_STATUS_CLASSES,
+  VISIT_STATUS_LABELS,
+  VisitStatus,
+} from '../visits/models/visit.model';
 import { DepositStatus } from '../treasury/models/treasury.model';
 
 type Ref = { id: string; name: string };
@@ -27,7 +31,13 @@ interface Dashboard {
   visits: {
     today: Record<VisitStatus, number>;
     monthCompleted: number;
-    list: { id: string; scheduledAt: string; status: VisitStatus; customer: Ref & { governorate: string }; salesRep: Ref }[];
+    list: {
+      id: string;
+      scheduledAt: string;
+      status: VisitStatus;
+      customer: Ref & { governorate: string };
+      salesRep: Ref;
+    }[];
   };
   customers: {
     total: number;
@@ -35,7 +45,14 @@ interface Dashboard {
     debt: number;
     debtors: number;
     pendingPayments: number;
-    topDebtors: { id: string; name: string; governorate: string; debit: number; pendingPayments: number; lastCollection: { date: string } | null }[];
+    topDebtors: {
+      id: string;
+      name: string;
+      governorate: string;
+      debit: number;
+      pendingPayments: number;
+      lastCollection: { date: string } | null;
+    }[];
   };
   cheques: {
     kind: 'INVOICE' | 'COLLECTION';
@@ -47,15 +64,52 @@ interface Dashboard {
     dueDate: string;
     depositStatus: DepositStatus | null;
   }[];
-  recentInvoices: { id: string; invoiceNumber: string; customer: Ref; createdBy: Ref; total: number; remaining: number; status: string; createdAt: string }[];
+  recentInvoices: {
+    id: string;
+    invoiceNumber: string;
+    customer: Ref;
+    createdBy: Ref;
+    total: number;
+    remaining: number;
+    status: string;
+    createdAt: string;
+  }[];
   // Sales rep
   cashBox?: { total: number; count: number };
   custody?: { items: number; quantity: number };
   // Managers
-  treasury?: { total: number; byMethod: { method: PaymentMethod; total: number; count: number }[]; withReps: number };
-  stock?: { products: number; value: number; lowStock: { id: string; name: string; unit: string | null; quantity: number; minQuantity: number }[] };
+  treasury?: {
+    total: number;
+    byMethod: { method: PaymentMethod; total: number; count: number }[];
+    withReps: number;
+  };
+  stock?: {
+    products: number;
+    value: number;
+    lowStock: {
+      id: string;
+      name: string;
+      unit: string | null;
+      quantity: number;
+      minQuantity: number;
+    }[];
+  };
   suppliers?: { debt: number; count: number };
-  reps?: { id: string; name: string; sales: number; invoices: number; collected: number; visitsCompleted: number; visitsToday: number; cashHeld: number; salesProgress: number | null; collectionProgress: number | null; commission: number; yearSalesProgress: number | null; yearCollectionProgress: number | null }[];
+  reps?: {
+    id: string;
+    name: string;
+    sales: number;
+    invoices: number;
+    collected: number;
+    visitsCompleted: number;
+    visitsToday: number;
+    cashHeld: number;
+    salesProgress: number | null;
+    collectionProgress: number | null;
+    commission: number;
+    yearSalesProgress: number | null;
+    yearCollectionProgress: number | null;
+  }[];
 }
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA'); // YYYY-MM-DD, local time like the API
@@ -75,12 +129,16 @@ export class DashboardComponent {
   protected readonly bucketLabels = BUCKET_LABELS;
   protected readonly visitLabels = VISIT_STATUS_LABELS;
   protected readonly visitClasses = VISIT_STATUS_CLASSES;
-  protected readonly visitStatuses = Object.values(VisitStatus).filter((s) => s !== VisitStatus.CANCELLED);
+  protected readonly visitStatuses = Object.values(VisitStatus).filter(
+    (s) => s !== VisitStatus.CANCELLED,
+  );
   protected readonly Pending = DepositStatus.PENDING;
 
   protected readonly data = rxResource({
     stream: () =>
-      this.http.get<ApiResponse<Dashboard>>(`${environment.apiUrl}/dashboard`).pipe(map(({ data }) => data)),
+      this.http
+        .get<ApiResponse<Dashboard>>(`${environment.apiUrl}/dashboard`)
+        .pipe(map(({ data }) => data)),
   });
 
   /** Every day of the month so far, with bar heights as % of the busiest day. */
@@ -88,16 +146,56 @@ export class DashboardComponent {
     const daily = new Map((this.data.value()?.daily ?? []).map((d) => [d.day, d]));
     const days = Array.from({ length: this.today.getDate() }, (_, i) => {
       const key = dayKey(new Date(this.today.getFullYear(), this.today.getMonth(), i + 1));
-      return { day: i + 1, label: arabicDigits(String(i + 1)), sales: daily.get(key)?.sales ?? 0, collected: daily.get(key)?.collected ?? 0 };
+      return {
+        day: i + 1,
+        label: arabicDigits(String(i + 1)),
+        sales: daily.get(key)?.sales ?? 0,
+        collected: daily.get(key)?.collected ?? 0,
+      };
     });
     const max = Math.max(1, ...days.flatMap((d) => [d.sales, d.collected]));
-    return days.map((d) => ({ ...d, salesPct: (d.sales / max) * 100, collectedPct: (d.collected / max) * 100 }));
+    return days.map((d) => ({
+      ...d,
+      salesPct: (d.sales / max) * 100,
+      collectedPct: (d.collected / max) * 100,
+    }));
   });
 
-  protected readonly visitsToday = computed(() => {
-    const t = this.data.value()?.visits.today;
-    return t ? t.PLANNED + t.IN_PROGRESS + t.COMPLETED : 0;
+  /** Best 5 reps by sales; the full list is on /targets. Null hides the card (reps, or no active reps). */
+  protected readonly topReps = computed(() => {
+    const reps = this.data.value()?.reps;
+    return reps?.length ? [...reps].sort((a, b) => b.sales - a.sales).slice(0, 5) : null;
   });
+
+  protected readonly repsWithCash = computed(
+    () => this.data.value()?.reps?.filter((r) => r.cashHeld > 0).length ?? 0,
+  );
+
+  protected readonly lowStockNames = computed(() => {
+    const low = this.data.value()?.stock?.lowStock ?? [];
+    return (
+      low
+        .slice(0, 3)
+        .map((p) => p.name)
+        .join('، ') + (low.length > 3 ? ' …' : '')
+    );
+  });
+
+  /** "محتاج متابعة" lists only what is not zero. */
+  protected readonly hasAlerts = computed(() => {
+    const d = this.data.value();
+    return (
+      !!d &&
+      ((d.treasury?.withReps ?? 0) > 0 ||
+        d.cheques.length > 0 ||
+        (this.isManager && d.customers.pendingApproval > 0) ||
+        !!d.stock?.lowStock.length)
+    );
+  });
+
+  protected scrollToCheques(): void {
+    document.getElementById('cheques')?.scrollIntoView({ behavior: 'smooth' });
+  }
 
   protected daysUntil(date: string): number {
     const start = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
