@@ -9,11 +9,12 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { StatusMessageComponent } from '../../shared/components/status-message/status-message.component';
 import { getPage, pagedResource } from '../../shared/paged';
 
-export type AuditAction = 'CANCEL' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT';
+export type AuditAction = 'CREATE' | 'CANCEL' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT';
 export type AuditEntity =
   | 'INVOICE'
   | 'COLLECTION'
   | 'RETURN'
+  | 'SUPPLIER_RETURN'
   | 'TREASURY_ENTRY'
   | 'SUPPLIER_PAYMENT'
   | 'CUSTOMER'
@@ -40,6 +41,7 @@ export interface AuditLog {
 }
 
 const ACTION_LABELS: Record<AuditAction, string> = {
+  CREATE: 'سجّل',
   CANCEL: 'ألغى',
   UPDATE: 'عدّل',
   DELETE: 'حذف',
@@ -51,6 +53,7 @@ export const AUDIT_ENTITY_LABELS: Record<AuditEntity, string> = {
   INVOICE: 'فاتورة بيع',
   COLLECTION: 'تحصيل',
   RETURN: 'مرتجع',
+  SUPPLIER_RETURN: 'مرتجع مورد',
   TREASURY_ENTRY: 'حركة خزنة',
   SUPPLIER_PAYMENT: 'دفعة مورد',
   CUSTOMER: 'عميل',
@@ -68,6 +71,8 @@ function link(a: AuditLog): string[] | null {
       return ['/collections', a.docId];
     case 'RETURN':
       return ['/returns', a.docId];
+    case 'SUPPLIER_RETURN':
+      return ['/documents', 'SUPPLIER_RETURN', a.docId];
     case 'TREASURY_ENTRY':
       return ['/treasury'];
     case 'SUPPLIER_PAYMENT':
@@ -91,7 +96,7 @@ function link(a: AuditLog): string[] | null {
     <section class="space-y-6">
       <div>
         <h1 class="text-2xl font-bold">سجل العمليات</h1>
-        <p class="mt-1 text-sm text-stormy-teal">مين ألغى أو عدّل إيه وإمتى.</p>
+        <p class="mt-1 text-sm text-stormy-teal">مين ألغى أو عدّل إيه وإمتى، والمرتجعات الجديدة.</p>
       </div>
 
       <div class="flex flex-wrap gap-2" role="group" aria-label="النوع">

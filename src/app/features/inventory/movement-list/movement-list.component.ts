@@ -35,6 +35,7 @@ export class MovementListComponent {
     [MovementType.RECEIVE]: 'PURCHASE',
     [MovementType.ISSUE]: 'ISSUE',
     [MovementType.RETURN]: 'RETURN',
+    [MovementType.SUPPLIER_RETURN]: 'SUPPLIER_RETURN',
   };
   protected readonly typeLabels = MOVEMENT_TYPE_LABELS;
   protected readonly typeClasses = MOVEMENT_TYPE_CLASSES;

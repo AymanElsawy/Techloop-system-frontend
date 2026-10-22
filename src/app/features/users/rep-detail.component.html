@@ -1,0 +1,404 @@
+<section class="space-y-6">
+  <a routerLink="/targets" [queryParams]="period()" class="text-sm text-stormy-teal hover:underline"
+    >→ العودة إلى المناديب</a
+  >
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">
+        {{ report.value()?.rep?.name ?? 'المندوب' }}
+        @if (report.value()?.rep?.isActive === false) {
+          <span
+            class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs text-vibrant-coral-300"
+            >موقوف</span
+          >
+        }
+      </h1>
+      @if (report.value(); as r) {
+        <p class="text-sm text-stormy-teal">
+          {{ r.warehouse ? r.warehouse.name : 'من غير مخزن' }}
+          @if (r.governorates.length) {
+            · {{ r.governorates.join('، ') }}
+          }
+        </p>
+      }
+    </div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div
+        role="group"
+        aria-label="الفترة"
+        class="flex overflow-hidden rounded-lg border border-stormy-teal-800"
+      >
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium"
+          [class]="!yearly() ? 'bg-yale-blue text-white' : ''"
+          [attr.aria-pressed]="!yearly()"
+          (click)="yearly.set(false)"
+        >
+          شهري
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium"
+          [class]="yearly() ? 'bg-yale-blue text-white' : ''"
+          [attr.aria-pressed]="yearly()"
+          (click)="yearly.set(true)"
+        >
+          سنوي
+        </button>
+      </div>
+      @if (yearly()) {
+        <div>
+          <label for="year" class="form-label">السنة</label>
+          <select
+            id="year"
+            class="form-input"
+            (change)="selectedYear.set($any($event.target).value)"
+          >
+            @for (y of years; track y) {
+              <option [value]="y" [selected]="y === selectedYear()">{{ y }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <div>
+          <label for="month" class="form-label">الشهر</label>
+          <input
+            id="month"
+            type="month"
+            class="form-input"
+            [value]="selectedMonth()"
+            (change)="setMonth($event)"
+          />
+        </div>
+      }
+      <a
+        routerLink="/targets/print"
+        [queryParams]="printParams()"
+        class="btn-outline whitespace-nowrap"
+        >طباعة التقرير</a
+      >
+    </div>
+  </div>
+
+  @if (report.error()) {
+    <app-status-message type="error" message="حدث خطأ أثناء التحميل." (retry)="report.reload()" />
+  } @else if (report.value(); as r) {
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="card">
+        <p class="text-sm text-stormy-teal">صافي المبيعات</p>
+        <p class="mt-2 text-xl font-bold tabular-nums">
+          {{ r.rep.netSales | currency: 'EGP' : 'symbol' : '1.0-2' }}
+        </p>
+        <p class="text-xs text-stormy-teal">
+          {{
+            r.rep.salesGoal
+              ? 'من ' +
+                (r.rep.salesGoal | currency: 'EGP' : 'symbol' : '1.0-0') +
+                ' (' +
+                r.rep.salesProgress +
+                '%)'
+              : 'بدون تارجت'
+          }}
+        </p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">التحصيل</p>
+        <p class="mt-2 text-xl font-bold tabular-nums">
+          {{ r.rep.collected | currency: 'EGP' : 'symbol' : '1.0-2' }}
+        </p>
+        <p class="text-xs text-stormy-teal">
+          {{
+            r.rep.collectionGoal
+              ? 'من ' +
+                (r.rep.collectionGoal | currency: 'EGP' : 'symbol' : '1.0-0') +
+                ' (' +
+                r.rep.collectionProgress +
+                '%)'
+              : 'بدون تارجت'
+          }}
+        </p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">العمولة</p>
+        <p class="mt-2 text-xl font-bold tabular-nums">
+          {{ r.rep.commission | currency: 'EGP' : 'symbol' : '1.0-2' }}
+        </p>
+        <p class="text-xs text-stormy-teal">
+          مبيعات {{ r.rep.salesCommissionRate }}% · تحصيل {{ r.rep.collectionCommissionRate }}%
+        </p>
+      </div>
+      <div class="card">
+        <p class="text-sm text-stormy-teal">خزنة المندوب (دلوقتي)</p>
+        <p class="mt-2 text-xl font-bold tabular-nums">
+          {{ r.cashBox.total | currency: 'EGP' : 'symbol' : '1.0-2' }}
+        </p>
+        <p class="text-xs text-stormy-teal">
+          نقدي {{ r.cashBox.cash | currency: 'EGP' : 'symbol' : '1.0-2' }} · مصروفات
+          {{ r.cashBox.expenses | currency: 'EGP' : 'symbol' : '1.0-2' }}
+        </p>
+      </div>
+    </div>
+
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">الزيارات ({{ r.visits.length }})</h2>
+      </summary>
+      @if (r.visits.length) {
+        <app-pager [(page)]="visits.page" [(limit)]="visits.limit" [total]="r.visits.length">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">الميعاد</th>
+                <th scope="col" class="px-4 py-3 font-semibold">العميل</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الغرض</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (v of visits.rows(); track v.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    <a
+                      [routerLink]="['/visits', v.id]"
+                      class="font-semibold hover:text-stormy-teal hover:underline"
+                      >{{ v.scheduledAt | date: 'd/M/y' }}</a
+                    >
+                  </td>
+                  <td class="px-4 py-3">{{ v.customer.name }}</td>
+                  <td class="px-4 py-3">{{ purposeLabels[v.purpose] }}</td>
+                  <td class="px-4 py-3">
+                    <span
+                      class="rounded-full px-2 py-0.5 text-xs"
+                      [class]="statusClasses[v.status]"
+                      >{{ statusLabels[v.status] }}</span
+                    >
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      } @else {
+        <p class="px-4 py-3 text-sm text-stormy-teal">مفيش زيارات في الفترة دي.</p>
+      }
+    </details>
+
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">فواتير البيع ({{ r.invoices.length }})</h2>
+      </summary>
+      @if (r.invoices.length) {
+        <app-pager [(page)]="invoices.page" [(limit)]="invoices.limit" [total]="r.invoices.length">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">الفاتورة</th>
+                <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">العميل</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الإجمالي</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المدفوع</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (i of invoices.rows(); track i.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    <a
+                      [routerLink]="['/invoices', i.id]"
+                      class="font-semibold hover:text-stormy-teal hover:underline"
+                      >{{ i.invoiceNumber }}</a
+                    >
+                  </td>
+                  <td class="px-4 py-3">{{ i.createdAt | date: 'd/M/y' }}</td>
+                  <td class="px-4 py-3">{{ i.customer.name }}</td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ i.total | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ i.paidAmount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                    <span class="text-xs text-stormy-teal">{{ payment(i.paymentMethod) }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      } @else {
+        <p class="px-4 py-3 text-sm text-stormy-teal">مفيش فواتير في الفترة دي.</p>
+      }
+    </details>
+
+    @if (r.returns.length) {
+      <details class="accordion">
+        <summary>
+          <h2 class="font-semibold">المرتجعات ({{ r.returns.length }})</h2>
+        </summary>
+        <app-pager [(page)]="returns.page" [(limit)]="returns.limit" [total]="r.returns.length">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">المرتجع</th>
+                <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">العميل</th>
+                <th scope="col" class="px-4 py-3 font-semibold">على فاتورة</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (x of returns.rows(); track x.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    <a
+                      [routerLink]="['/returns', x.id]"
+                      class="font-semibold hover:text-stormy-teal hover:underline"
+                      >{{ x.number }}</a
+                    >
+                  </td>
+                  <td class="px-4 py-3">{{ x.createdAt | date: 'd/M/y' }}</td>
+                  <td class="px-4 py-3">{{ x.customer.name }}</td>
+                  <td class="px-4 py-3">{{ x.invoice.invoiceNumber }}</td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ x.total | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      </details>
+    }
+
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">التحصيلات ({{ r.collections.length }})</h2>
+      </summary>
+      @if (r.collections.length) {
+        <app-pager
+          [(page)]="collections.page"
+          [(limit)]="collections.limit"
+          [total]="r.collections.length"
+        >
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">الإيصال</th>
+                <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">العميل</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (c of collections.rows(); track c.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    <a
+                      [routerLink]="['/collections', c.id]"
+                      class="font-semibold hover:text-stormy-teal hover:underline"
+                      >{{ c.receiptNumber }}</a
+                    >
+                  </td>
+                  <td class="px-4 py-3">{{ c.createdAt | date: 'd/M/y' }}</td>
+                  <td class="px-4 py-3">{{ c.customer.name }}</td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ c.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                    <span class="text-xs text-stormy-teal">{{ payment(c.paymentMethod) }}</span>
+                    @if (c.chequeStatus === 'BOUNCED') {
+                      <span
+                        class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs text-vibrant-coral-300"
+                        >مرتد</span
+                      >
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      } @else {
+        <p class="px-4 py-3 text-sm text-stormy-teal">مفيش تحصيلات في الفترة دي.</p>
+      }
+    </details>
+
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">المصروفات ({{ r.expenses.length }})</h2>
+      </summary>
+      @if (r.expenses.length) {
+        <app-pager [(page)]="expenses.page" [(limit)]="expenses.limit" [total]="r.expenses.length">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">التاريخ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">البند</th>
+                <th scope="col" class="px-4 py-3 font-semibold">المبلغ</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (e of expenses.rows(); track e.id) {
+                <tr>
+                  <td class="px-4 py-3">{{ e.createdAt | date: 'd/M/y' }}</td>
+                  <td class="px-4 py-3">
+                    {{ e.category ?? '—' }}
+                    @if (e.notes) {
+                      <span class="text-xs text-stormy-teal">{{ e.notes }}</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ e.amount | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
+                  <td class="px-4 py-3 text-xs">
+                    {{ e.depositStatus === 'PENDING' ? 'مع المندوب' : 'اتسلمت' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      } @else {
+        <p class="px-4 py-3 text-sm text-stormy-teal">مفيش مصروفات في الفترة دي.</p>
+      }
+    </details>
+
+    <details class="accordion">
+      <summary>
+        <h2 class="font-semibold">العهدة دلوقتي ({{ r.custody.length }} صنف)</h2>
+      </summary>
+      @if (r.custody.length) {
+        <app-pager [(page)]="custody.page" [(limit)]="custody.limit" [total]="r.custody.length">
+          <table class="w-full text-right text-sm">
+            <thead class="table-head">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">الصنف</th>
+                <th scope="col" class="px-4 py-3 font-semibold">الكمية</th>
+                <th scope="col" class="px-4 py-3 font-semibold">القيمة (بسعر البيع)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stormy-teal-900">
+              @for (s of custody.rows(); track s.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    {{ s.product.name }}
+                    <span class="text-xs text-stormy-teal">{{ s.product.code }}</span>
+                  </td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ s.quantity }} {{ unitLabels[s.product.unit] }}
+                  </td>
+                  <td class="px-4 py-3 tabular-nums">
+                    {{ s.quantity * s.product.price | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-pager>
+      } @else {
+        <p class="px-4 py-3 text-sm text-stormy-teal">مفيش عهدة مع المندوب.</p>
+      }
+    </details>
+  } @else {
+    <app-status-message type="loading" message="جاري التحميل..." />
+  }
+</section>

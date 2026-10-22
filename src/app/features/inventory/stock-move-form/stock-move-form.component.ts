@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
@@ -6,6 +7,7 @@ import { map } from 'rxjs';
 
 import { httpErrorMessage } from '../../../core/http/http-error';
 import { PRODUCT_UNIT_LABELS, ProductUnit } from '../../products/models/product.model';
+import { SupplierService } from '../../suppliers/services/supplier.service';
 import { ManualMovement, MOVEMENT_TYPE_LABELS, MovementType } from '../models/inventory.model';
 import { InventoryService } from '../services/inventory.service';
 
@@ -16,21 +18,22 @@ interface Option {
   available: number;
 }
 
-const MANUAL: ManualMovement[] = [MovementType.ISSUE, MovementType.RETURN, MovementType.TRANSFER];
+const MANUAL: ManualMovement[] = [MovementType.ISSUE, MovementType.RETURN, MovementType.TRANSFER, MovementType.SUPPLIER_RETURN];
 
 /**
- * Managers only. /inventory/warehouses/:id/move?type=ISSUE|RETURN|TRANSFER&repId=
+ * Managers only. /inventory/warehouses/:id/move?type=ISSUE|RETURN|TRANSFER|SUPPLIER_RETURN&repId=&supplierId=
  * Receipts from suppliers use the purchase form (/documents/purchases/new).
  */
 @Component({
   selector: 'app-stock-move-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink],
   templateUrl: './stock-move-form.component.html',
 })
 export class StockMoveFormComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
   private readonly inventory = inject(InventoryService);
+  private readonly supplierService = inject(SupplierService);
 
   /** Warehouse from the route. */
   readonly id = input<string>();
@@ -40,19 +43,22 @@ export class StockMoveFormComponent implements OnInit {
     () => MANUAL.find((t) => t === this.type()) ?? MovementType.ISSUE,
   );
   readonly repId = input<string>();
+  readonly supplierId = input<string>();
 
   protected readonly MovementType = MovementType;
   protected readonly typeLabels = MOVEMENT_TYPE_LABELS;
   protected readonly unitLabels = PRODUCT_UNIT_LABELS;
   protected readonly isTransfer = computed(() => this.kind() === MovementType.TRANSFER);
-  protected readonly needsRep = computed(() => !this.isTransfer());
-  /** ISSUE and TRANSFER take from the warehouse's main stock. */
+  protected readonly isSupplierReturn = computed(() => this.kind() === MovementType.SUPPLIER_RETURN);
+  protected readonly needsRep = computed(() => !this.isTransfer() && !this.isSupplierReturn());
+  /** ISSUE, TRANSFER and SUPPLIER_RETURN take from the warehouse's main stock. */
   private readonly fromMainStock = computed(() => this.kind() !== MovementType.RETURN);
 
   protected readonly form = this.fb.group({
     warehouseId: ['', Validators.required],
     repId: [''],
     toWarehouseId: [''], // TRANSFER only
+    supplierId: [''], // SUPPLIER_RETURN only
     items: this.fb.array([this.newItem()]),
     notes: [''],
   });
@@ -71,6 +77,33 @@ export class StockMoveFormComponent implements OnInit {
     stream: ({ params }) => this.inventory.getWarehouse(params),
   });
 
+  protected readonly suppliers = rxResource({
+    params: () => (this.isSupplierReturn() ? true : undefined),
+    stream: () => this.supplierService.getSuppliers(),
+  });
+  /** SUPPLIER_RETURN: productId -> what's left of it from this supplier and its price (set by the server). */
+  protected readonly returnable = rxResource({
+    params: () => (this.isSupplierReturn() && this.value().supplierId) || undefined,
+    stream: ({ params }) =>
+      this.supplierService.getReturnable(params).pipe(map((list) => new Map(list.map((r) => [r.productId, r])))),
+  });
+  /** SUPPLIER_RETURN: only the warehouses this supplier delivered to (of what's still returnable). */
+  protected readonly sourceWarehouses = computed(() => {
+    const list = this.warehouses.value() ?? [];
+    if (!this.isSupplierReturn()) return list;
+    const ids = new Set([...(this.returnable.value()?.values() ?? [])].flatMap((r) => r.warehouseIds));
+    return list.filter((w) => ids.has(w.id));
+  });
+
+  protected readonly returnTotal = computed(() =>
+    Math.round(
+      (this.value().items ?? []).reduce(
+        (s, i) => s + Number(i.quantity ?? 0) * (this.returnable.value()?.get(i.productId ?? '')?.unitCost ?? 0),
+        0,
+      ) * 100,
+    ) / 100,
+  );
+
   /** Products that can be picked, with the quantity available at the source. */
   protected readonly options = computed<Option[]>(() => {
     const d = this.details.value();
@@ -78,12 +111,14 @@ export class StockMoveFormComponent implements OnInit {
     const rows = this.fromMainStock()
       ? d.stock
       : (d.reps.find((r) => r.rep.id === this.value().repId)?.custody ?? []);
-    return rows.map((r) => ({
-      id: r.product.id,
-      name: r.product.name,
-      unit: r.product.unit,
-      available: r.quantity,
-    }));
+    if (!this.isSupplierReturn())
+      return rows.map((r) => ({ id: r.product.id, name: r.product.name, unit: r.product.unit, available: r.quantity }));
+    // Only what was bought from this supplier, up to what's left of it here.
+    const returnable = this.returnable.value() ?? new Map();
+    return rows.flatMap((r) => {
+      const left = returnable.get(r.product.id)?.quantity;
+      return left ? [{ id: r.product.id, name: r.product.name, unit: r.product.unit, available: Math.min(r.quantity, left) }] : [];
+    });
   });
   private readonly optionById = computed(() => new Map(this.options().map((o) => [o.id, o])));
 
@@ -100,15 +135,25 @@ export class StockMoveFormComponent implements OnInit {
     if (this.hasLineError()) return false;
     if (this.needsRep() && !v.repId) return false;
     if (this.isTransfer() && (!v.toWarehouseId || v.toWarehouseId === v.warehouseId)) return false;
+    if (this.isSupplierReturn() && !v.supplierId) return false;
     return true;
   });
 
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  constructor() {
+    // SUPPLIER_RETURN: one warehouse to return from is picked on its own.
+    effect(() => {
+      const only = this.sourceWarehouses();
+      if (this.isSupplierReturn() && only.length === 1 && !untracked(() => this.form.controls.warehouseId.value))
+        this.form.controls.warehouseId.setValue(only[0]!.id);
+    });
+  }
+
   ngOnInit(): void {
     // Route / query params preselect the warehouse and rep.
-    this.form.patchValue({ warehouseId: this.id() ?? '', repId: this.repId() ?? '' });
+    this.form.patchValue({ warehouseId: this.id() ?? '', repId: this.repId() ?? '', supplierId: this.supplierId() ?? '' });
   }
 
   protected get items() {
@@ -151,11 +196,13 @@ export class StockMoveFormComponent implements OnInit {
       .move(v.warehouseId, this.kind(), {
         ...(this.needsRep() && { repId: v.repId }),
         ...(this.isTransfer() && { toWarehouseId: v.toWarehouseId }),
+        ...(this.isSupplierReturn() && { supplierId: v.supplierId }),
         items: v.items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) })),
         notes: v.notes.trim() || null,
       })
       .subscribe({
-        next: () => this.router.navigate(['/inventory/warehouses', v.warehouseId]),
+        next: () =>
+          this.router.navigate(this.isSupplierReturn() ? ['/suppliers', v.supplierId] : ['/inventory/warehouses', v.warehouseId]),
         error: (err: unknown) => {
           this.saving.set(false);
           this.error.set(httpErrorMessage(err, 'تعذر حفظ الحركة. حاول مرة أخرى.'));

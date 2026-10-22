@@ -43,3 +43,13 @@ export interface SupplierPaymentInput {
   chequeDueDate?: string | null;
   notes?: string | null;
 }
+
+/** مرتجع للمورد: a product bought from the supplier, what's left of it to return, and its price (last bought). */
+export interface Returnable {
+  productId: string;
+  name: string;
+  unitCost: number;
+  quantity: number;
+  /** Warehouses it was received into from this supplier. */
+  warehouseIds: string[];
+}

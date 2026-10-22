@@ -24,6 +24,7 @@ const MOVE_PATH: Record<ManualMovement, string> = {
   [MovementType.ISSUE]: 'issue',
   [MovementType.RETURN]: 'return',
   [MovementType.TRANSFER]: 'transfer',
+  [MovementType.SUPPLIER_RETURN]: 'supplier-return',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,13 +48,14 @@ export class InventoryService {
     return this.http.patch<ApiResponse<Warehouse>>(`${this.url}/warehouses/${id}`, data).pipe(map(({ data }) => data));
   }
 
-  /** ISSUE and RETURN need a rep; TRANSFER a target warehouse. */
+  /** ISSUE and RETURN need a rep; TRANSFER a target warehouse; SUPPLIER_RETURN a supplier and unit costs. */
   move(
     warehouseId: string,
     type: ManualMovement,
     data: {
       repId?: string;
       toWarehouseId?: string;
+      supplierId?: string;
       items: StockItemInput[];
       notes?: string | null;
     },
@@ -82,6 +84,13 @@ export class InventoryService {
     return getPage(this.http, `${this.url}/movements`, query);
   }
 
+
+  /** Goods back into the warehouse, value back on the supplier debt. Managers only. */
+  cancelSupplierReturn(id: string, reason: string): Observable<Movement> {
+    return this.http
+      .post<ApiResponse<Movement>>(`${this.url}/supplier-returns/${id}/cancel`, { reason })
+      .pipe(map(({ data }) => data));
+  }
 
   getMovement(id: string): Observable<Movement> {
     return this.http.get<ApiResponse<Movement>>(`${this.url}/movements/${id}`).pipe(map(({ data }) => data));

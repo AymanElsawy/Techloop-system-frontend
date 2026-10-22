@@ -1,9 +1,9 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-bold">التارجت والعمولات</h1>
+      <h1 class="text-2xl font-bold">المناديب</h1>
       <p class="text-sm text-stormy-teal">
-        المبيعات بعد خصم المرتجعات، والتحصيل من غير الشيكات المرتدة. العمولة = نسبة من صافي المبيعات + نسبة من التحصيل.
+        التارجت والعمولات: المبيعات بعد خصم المرتجعات، والتحصيل من غير الشيكات المرتدة. العمولة = نسبة من صافي المبيعات + نسبة من التحصيل. اضغط على اسم المندوب لكل تفاصيله.
       </p>
     </div>
     <div class="flex flex-wrap items-end gap-3">
@@ -63,7 +63,7 @@
           @for (r of report.value()!.items; track r.id) {
             <tr>
               <td class="px-4 py-3 font-medium">
-                {{ r.name }}
+                <a [routerLink]="['/targets', r.id]" [queryParams]="period()" class="font-semibold text-yale-blue hover:text-stormy-teal hover:underline">{{ r.name }}</a>
                 @if (!r.isActive) {
                   <span class="ms-1 rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs text-vibrant-coral-300">موقوف</span>
                 }

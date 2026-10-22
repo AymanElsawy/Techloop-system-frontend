@@ -1,9 +1,13 @@
 <section class="mx-auto max-w-4xl space-y-6">
-  <a
-    [routerLink]="id() ? ['/inventory/warehouses', id()] : '/inventory'"
-    class="text-sm text-stormy-teal hover:underline"
-    >→ العودة إلى المخزن</a
-  >
+  @if (isSupplierReturn() && supplierId()) {
+    <a [routerLink]="['/suppliers', supplierId()]" class="text-sm text-stormy-teal hover:underline">→ العودة إلى المورد</a>
+  } @else {
+    <a
+      [routerLink]="id() ? ['/inventory/warehouses', id()] : '/inventory'"
+      class="text-sm text-stormy-teal hover:underline"
+      >→ العودة إلى المخزن</a
+    >
+  }
   <div>
     <h1 class="text-2xl font-bold">{{ typeLabels[kind()] }}</h1>
     <p class="mt-1 text-stormy-teal">
@@ -17,14 +21,17 @@
         @case (MovementType.TRANSFER) {
           بضاعة تتنقل من المخزن ده لمخزن تاني.
         }
+        @case (MovementType.SUPPLIER_RETURN) {
+          بضاعة ترجع من المخزن للمورد، وقيمتها بتتخصم من مديونية المورد.
+        }
       }
     </p>
   </div>
 
-  @if (warehouses.error() || details.error()) {
+  @if (warehouses.error() || details.error() || suppliers.error() || returnable.error()) {
     <div role="alert" class="card space-y-3 text-center">
       <p class="text-sm">حدث خطأ أثناء تحميل البيانات.</p>
-      <button type="button" class="btn-outline" (click)="warehouses.reload(); details.reload()">
+      <button type="button" class="btn-outline" (click)="warehouses.reload(); details.reload(); suppliers.reload(); returnable.reload()">
         إعادة المحاولة
       </button>
     </div>
@@ -40,13 +47,26 @@
             (change)="resetLines()"
           >
             <option value="" disabled>اختر المخزن</option>
-            @for (w of warehouses.value() ?? []; track w.id) {
+            @for (w of sourceWarehouses(); track w.id) {
               <option [value]="w.id">{{ w.name }}</option>
             }
           </select>
+          @if (isSupplierReturn() && value().supplierId && returnable.hasValue() && !sourceWarehouses().length) {
+            <p class="mt-1 text-xs text-soft-apricot-300">مفيش بضاعة باقية من المورد ده ترجع له.</p>
+          }
         </div>
 
-        @if (isTransfer()) {
+        @if (isSupplierReturn()) {
+          <div>
+            <label for="supplier" class="form-label">المورد *</label>
+            <select id="supplier" formControlName="supplierId" class="form-input" (change)="form.controls.warehouseId.setValue(''); resetLines()">
+              <option value="" disabled>اختر المورد</option>
+              @for (s of suppliers.value() ?? []; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+        } @else if (isTransfer()) {
           <div>
             <label for="to-warehouse" class="form-label">إلى مخزن *</label>
             <select id="to-warehouse" formControlName="toWarehouseId" class="form-input">
@@ -81,7 +101,11 @@
         @if (value().warehouseId && !options().length && (!needsRep() || value().repId)) {
           <p class="text-sm text-stormy-teal">
             {{
-              !needsRep() || kind() === MovementType.ISSUE
+              isSupplierReturn()
+                ? value().supplierId
+                  ? 'مفيش بضاعة من المورد ده في المخزن ده.'
+                  : 'اختار المورد الأول.'
+                : !needsRep() || kind() === MovementType.ISSUE
                 ? 'المخزن فارغ.'
                 : 'لا توجد بضاعة في عهدة هذا المندوب.'
             }}
@@ -93,7 +117,7 @@
               [formGroupName]="i"
               class="grid gap-3 rounded-lg border border-stormy-teal-900 p-3 sm:grid-cols-12 sm:items-end"
             >
-              <div class="sm:col-span-7">
+              <div [class]="isSupplierReturn() ? 'sm:col-span-5' : 'sm:col-span-7'">
                 <label [for]="'product-' + i" class="form-label">الصنف</label>
                 <select [id]="'product-' + i" formControlName="productId" class="form-input">
                   <option value="" disabled>اختر الصنف</option>
@@ -107,7 +131,7 @@
                   }
                 </select>
               </div>
-              <div class="sm:col-span-3">
+              <div [class]="isSupplierReturn() ? 'sm:col-span-2' : 'sm:col-span-3'">
                 <label [for]="'qty-' + i" class="form-label">الكمية</label>
                 <input
                   [id]="'qty-' + i"
@@ -121,6 +145,18 @@
                   [attr.aria-invalid]="lineErrors()[i] !== null"
                 />
               </div>
+              @if (isSupplierReturn()) {
+                <div class="sm:col-span-3">
+                  <p class="form-label">سعر الشراء</p>
+                  <p class="py-2 font-semibold tabular-nums">
+                    @if (returnable.value()?.get(value().items?.[i]?.productId ?? ''); as r) {
+                      {{ r.unitCost | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                    } @else {
+                      —
+                    }
+                  </p>
+                </div>
+              }
               <div class="sm:col-span-2">
                 @if (items.length > 1) {
                   <button
@@ -142,6 +178,12 @@
           }
         </div>
         <button type="button" class="btn-outline" (click)="addItem()">+ إضافة صنف</button>
+        @if (isSupplierReturn()) {
+          <p class="text-sm">
+            إجمالي المرتجع (يتخصم من مديونية المورد):
+            <span class="font-bold tabular-nums">{{ returnTotal() | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+          </p>
+        }
       </div>
 
       <div class="card">
@@ -150,7 +192,7 @@
           id="notes"
           formControlName="notes"
           class="form-input"
-          [placeholder]="isTransfer() ? 'سبب التحويل' : 'رقم الإذن'"
+          [placeholder]="isTransfer() ? 'سبب التحويل' : isSupplierReturn() ? 'سبب المرتجع' : 'رقم الإذن'"
         />
       </div>
 

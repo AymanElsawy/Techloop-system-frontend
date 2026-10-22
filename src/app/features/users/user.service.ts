@@ -7,6 +7,8 @@ import { ApiResponse, Page, PageParams } from '../../core/models/api-response';
 import { getPage } from '../../shared/paged';
 import { User, UserRole } from '../../core/auth/auth.models';
 import { PaymentMethod } from '../invoices/models/invoice.model';
+import { ProductUnit } from '../products/models/product.model';
+import { VisitPurpose, VisitStatus } from '../visits/models/visit.model';
 
 export interface ManagedUser extends User {
   isActive: boolean;
@@ -66,6 +68,14 @@ export interface RepTargetReport {
   invoices: (Doc & { invoiceNumber: string; total: number; paidAmount: number; paymentMethod: PaymentMethod | null; chequeStatus: string | null })[];
   collections: (Doc & { receiptNumber: string; amount: number; paymentMethod: PaymentMethod; chequeNumber: string | null; chequeStatus: string | null })[];
   returns: (Doc & { number: number; total: number; invoice: { id: string; invoiceNumber: string } })[];
+  visits: (Doc & { purpose: VisitPurpose; status: VisitStatus; scheduledAt: string; completedAt: string | null })[];
+  /** The rep's expenses; depositStatus PENDING = still in the rep's cash box. */
+  expenses: { id: string; number: number; amount: number; category: string | null; notes: string | null; depositStatus: string | null; createdAt: string }[];
+  /** Right now, not for the period: */
+  warehouse: { id: string; name: string } | null;
+  custody: { id: string; quantity: number; product: { id: string; name: string; code: string; unit: ProductUnit; price: number } }[];
+  cashBox: { total: number; cash: number; expenses: number; count: number };
+  governorates: string[];
 }
 
 export interface CreateUserRequest {

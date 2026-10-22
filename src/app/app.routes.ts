@@ -312,7 +312,7 @@ export const routes: Routes = [
       },
       {
         path: 'targets',
-        title: 'التارجت والعمولات',
+        title: 'المناديب',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () => import('./features/users/targets.component').then((m) => m.TargetsComponent),
       },
@@ -321,6 +321,12 @@ export const routes: Routes = [
         title: 'طباعة تقرير التارجت',
         canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
         loadComponent: () => import('./features/users/targets-print.component').then((m) => m.TargetsPrintComponent),
+      },
+      {
+        path: 'targets/:id',
+        title: 'المندوب',
+        canActivate: [roleGuard(UserRole.OWNER, UserRole.ADMIN)],
+        loadComponent: () => import('./features/users/rep-detail.component').then((m) => m.RepDetailComponent),
       },
       {
         path: 'audit-log',

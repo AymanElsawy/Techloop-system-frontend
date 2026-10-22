@@ -15,7 +15,7 @@ import { InventoryService } from '../../inventory/services/inventory.service';
 import { Supplier } from '../models/supplier.model';
 import { SupplierService } from '../services/supplier.service';
 
-/** /suppliers/:id — supplier info, purchases, debt and payments. */
+/** /suppliers/:id — supplier info, purchases and returns, debt and payments. */
 @Component({
   selector: 'app-supplier-details',
   imports: [CurrencyPipe, DatePipe, ReactiveFormsModule, RouterLink, ShareLinkComponent, StatusMessageComponent],
@@ -33,7 +33,8 @@ export class SupplierDetailsComponent {
   });
   protected readonly purchases = rxResource({
     params: () => this.id(),
-    stream: ({ params }) => this.inventory.getMovements({ supplierId: params, type: MovementType.RECEIVE }),
+    // Receipts and supplier returns (the only movements with a supplier).
+    stream: ({ params }) => this.inventory.getMovements({ supplierId: params }),
   });
   protected readonly payments = rxResource({
     params: () => this.id(),
@@ -59,6 +60,8 @@ export class SupplierDetailsComponent {
 
   protected readonly cancellingId = signal<string | null>(null);
   protected readonly cancelReason = new FormControl('', { nonNullable: true, validators: [Validators.required] });
+  /** The supplier return being cancelled (shares the reason / error with payments). */
+  protected readonly cancellingReturnId = signal<string | null>(null);
   protected readonly cancelling = signal(false);
   protected readonly cancelError = signal<string | null>(null);
 
@@ -77,7 +80,10 @@ export class SupplierDetailsComponent {
     return m.totalCost ?? Math.round(m.items.reduce((sum, i) => sum + i.quantity * (i.unitCost ?? 0), 0) * 100) / 100;
   }
 
+  protected readonly MovementType = MovementType;
+
   protected receiptRemaining(m: Movement): number {
+    if (m.type === MovementType.SUPPLIER_RETURN) return 0;
     const total = this.receiptTotal(m);
     const paid = m.paidAmount ?? total;
     return Math.round((total - paid) * 100) / 100;
@@ -147,6 +153,7 @@ export class SupplierDetailsComponent {
   }
 
   protected startCancel(paymentId: string): void {
+    this.cancellingReturnId.set(null);
     this.cancelReason.reset('');
     this.cancelError.set(null);
     this.cancellingId.set(paymentId);
@@ -163,6 +170,32 @@ export class SupplierDetailsComponent {
         this.cancellingId.set(null);
         this.supplier.reload();
         this.payments.reload();
+      },
+      error: (err: unknown) => {
+        this.cancelling.set(false);
+        this.cancelError.set(httpErrorMessage(err));
+      },
+    });
+  }
+
+  protected startCancelReturn(id: string): void {
+    this.cancellingId.set(null);
+    this.cancelReason.reset('');
+    this.cancelError.set(null);
+    this.cancellingReturnId.set(id);
+  }
+
+  protected confirmCancelReturn(): void {
+    const id = this.cancellingReturnId();
+    if (!id || this.cancelReason.invalid || this.cancelling()) return;
+    this.cancelling.set(true);
+    this.cancelError.set(null);
+    this.inventory.cancelSupplierReturn(id, this.cancelReason.value.trim()).subscribe({
+      next: () => {
+        this.cancelling.set(false);
+        this.cancellingReturnId.set(null);
+        this.supplier.reload();
+        this.purchases.reload();
       },
       error: (err: unknown) => {
         this.cancelling.set(false);

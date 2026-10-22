@@ -214,10 +214,11 @@ export class DocumentPrintComponent {
             signatures: ['توقيع المندوب', 'توقيع المستلم'],
           })),
         );
-      default: // PURCHASE / ISSUE / RETURN
+      default: // PURCHASE / SUPPLIER_RETURN / ISSUE / RETURN
         return this.documents.getMovement(id).pipe(
           map((m) => {
-            const purchase = type === DocumentType.PURCHASE;
+            const supplierReturn = type === DocumentType.SUPPLIER_RETURN;
+            const purchase = type === DocumentType.PURCHASE || supplierReturn;
             const supplier = m.supplier as (typeof m.supplier & { phone?: string | null; company?: string | null; address?: string | null }) | null;
             const qty = m.items.reduce((s, i) => s + i.quantity, 0);
             const total = m.totalCost ?? m.items.reduce((s, i) => s + i.quantity * (i.unitCost ?? 0), 0);
@@ -227,7 +228,7 @@ export class DocumentPrintComponent {
               title,
               number: String(m.number ?? '—'),
               date: this.date(m.createdAt),
-              cancelled: null,
+              cancelled: m.cancelledAt ? (m.cancelReason ?? '') : null,
               party: purchase
                 ? { label: 'المورد', lines: [supplier?.name ?? '—', supplier?.company ?? '', supplier?.phone ?? '', supplier?.address ?? ''].filter(Boolean) }
                 : { label: type === DocumentType.ISSUE ? 'صُرف إلى المندوب' : 'مرتجع من المندوب', lines: [m.rep?.name ?? '—'] },
@@ -241,7 +242,12 @@ export class DocumentPrintComponent {
                   ? [String(n + 1), it.name, this.num(it.quantity), this.money(it.unitCost ?? 0), this.money(it.quantity * (it.unitCost ?? 0))]
                   : [String(n + 1), it.name, this.num(it.quantity)],
               ),
-              totals: purchase
+              totals: supplierReturn
+                ? [
+                    ['إجمالي الكمية', this.num(qty)],
+                    ['إجمالي المرتجع (يخصم من مديونية المورد)', this.money(total)],
+                  ]
+                : purchase
                 ? [
                     ['إجمالي الكمية', this.num(qty)],
                     ['إجمالي الفاتورة', this.money(total)],
@@ -250,7 +256,9 @@ export class DocumentPrintComponent {
                   ]
                 : [['إجمالي الكمية', this.num(qty)]],
               notes: m.notes,
-              signatures: purchase ? ['توقيع المورد', 'توقيع أمين المخزن'] : ['توقيع المندوب', 'توقيع أمين المخزن'],
+              signatures: supplierReturn
+                ? ['توقيع أمين المخزن', 'توقيع المستلم (المورد)']
+                : purchase ? ['توقيع المورد', 'توقيع أمين المخزن'] : ['توقيع المندوب', 'توقيع أمين المخزن'],
             };
           }),
         );

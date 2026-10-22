@@ -16,6 +16,11 @@
       <div class="flex flex-wrap gap-3">
         @if (s.isActive) {
           <a routerLink="/documents/purchases/new" [queryParams]="{ supplierId: s.id }" class="btn-primary">وارد من المورد ده</a>
+        }
+        @if (s.receipts > 0) {
+          <a routerLink="/inventory/move" [queryParams]="{ type: MovementType.SUPPLIER_RETURN, supplierId: s.id }" class="btn-outline">مرتجع للمورد ده</a>
+        }
+        @if (s.isActive) {
           @if (s.debt > 0 && !paying()) {
             <button type="button" class="btn-outline" (click)="startPay()">تسجيل سداد</button>
           }
@@ -27,6 +32,12 @@
       </div>
     </div>
 
+    @if (s.debt < 0) {
+      <p role="note" class="card text-center text-sm">
+        رصيد للشركة عند المورد ده (من المرتجعات):
+        <span class="text-lg font-bold tabular-nums text-stormy-teal">{{ -s.debt | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
+      </p>
+    }
     @if (s.debt > 0) {
       <p role="note" class="card text-center text-sm">
         مديونية الشركة عند المورد ده:
@@ -157,7 +168,7 @@
     </dl>
 
     <div class="space-y-3">
-      <h2 class="text-lg font-bold">المشتريات</h2>
+      <h2 class="text-lg font-bold">المشتريات والمرتجعات</h2>
       @if (purchases.error()) {
         <app-status-message type="error" message="حدث خطأ أثناء تحميل المشتريات." (retry)="purchases.reload()" />
       } @else if (purchases.hasValue() && !purchases.value()!.length) {
@@ -178,7 +189,15 @@
             <tbody class="divide-y divide-stormy-teal-900">
               @for (m of purchases.value(); track m.id) {
                 <tr class="align-top">
-                  <td class="whitespace-nowrap px-4 py-3">{{ m.createdAt | date: 'd MMM y' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">
+                    {{ m.createdAt | date: 'd MMM y' }}
+                    @if (m.type === MovementType.SUPPLIER_RETURN) {
+                      <span class="mt-1 block w-fit rounded-full bg-vibrant-coral-900 px-2 py-0.5 text-xs text-vibrant-coral-300">مرتجع</span>
+                      @if (m.cancelledAt) {
+                        <span class="mt-1 block w-fit rounded-full bg-alabaster-grey-400 px-2 py-0.5 text-xs text-alabaster-grey-100">ملغى</span>
+                      }
+                    }
+                  </td>
                   <td class="px-4 py-3">{{ m.warehouse?.name ?? '—' }}</td>
                   <td class="px-4 py-3">
                     <ul class="space-y-0.5">
@@ -190,12 +209,32 @@
                       <p class="mt-1 text-xs text-stormy-teal">{{ m.notes }}</p>
                     }
                   </td>
-                  <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ receiptTotal(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 font-semibold" [class.line-through]="m.cancelledAt">
+                    {{ m.type === MovementType.SUPPLIER_RETURN ? '− ' : '' }}{{ receiptTotal(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}
+                  </td>
                   <td class="whitespace-nowrap px-4 py-3 font-semibold" [class.text-vibrant-coral-400]="receiptRemaining(m) > 0">
                     {{ receiptRemaining(m) | currency: 'EGP' : 'symbol' : '1.0-2' }}
                   </td>
-                  <td class="whitespace-nowrap px-4 py-3">
-                    <a [routerLink]="['/documents', 'PURCHASE', m.id]" class="text-stormy-teal hover:underline">التفاصيل</a>
+                  <td class="px-4 py-3">
+                    <a [routerLink]="['/documents', m.type === MovementType.SUPPLIER_RETURN ? 'SUPPLIER_RETURN' : 'PURCHASE', m.id]" class="text-stormy-teal hover:underline">التفاصيل</a>
+                    @if (m.type === MovementType.SUPPLIER_RETURN) {
+                      @if (m.cancelledAt) {
+                        <p class="mt-1 text-xs text-stormy-teal">السبب: {{ m.cancelReason }}</p>
+                      } @else if (cancellingReturnId() === m.id) {
+                        <div class="mt-2 space-y-2">
+                          <textarea rows="2" class="form-input" placeholder="سبب الإلغاء" [formControl]="cancelReason"></textarea>
+                          <div class="flex gap-2">
+                            <button type="button" class="btn-primary" [disabled]="cancelReason.invalid || cancelling()" (click)="confirmCancelReturn()">تأكيد</button>
+                            <button type="button" class="btn-outline" (click)="cancellingReturnId.set(null)">تراجع</button>
+                          </div>
+                          @if (cancelError(); as message) {
+                            <p role="alert" class="text-xs text-vibrant-coral-300">{{ message }}</p>
+                          }
+                        </div>
+                      } @else {
+                        <button type="button" class="ms-3 text-sm text-stormy-teal hover:underline" (click)="startCancelReturn(m.id)">إلغاء</button>
+                      }
+                    }
                   </td>
                 </tr>
               }

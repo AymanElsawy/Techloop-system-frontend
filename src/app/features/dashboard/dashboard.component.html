@@ -195,6 +195,49 @@
             </p>
           }
         </div>
+
+        <!-- Month chart -->
+        <div class="card">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-semibold">حركة الشهر يوم بيوم</h2>
+            <div class="flex gap-4 text-xs text-stormy-teal">
+              <span class="flex items-center gap-1.5"
+                ><span class="size-2.5 rounded-sm bg-yale-blue"></span> مبيعات</span
+              >
+              <span class="flex items-center gap-1.5"
+                ><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-prussian-blue-700"></span>
+                تحصيل</span
+              >
+            </div>
+          </div>
+          <div class="flex h-28 items-end gap-1" dir="ltr">
+            @for (day of chart(); track day.day) {
+              <div
+                class="group flex h-full flex-1 flex-col justify-end"
+                [title]="
+                  'يوم ' +
+                  day.label +
+                  ' — مبيعات ' +
+                  (day.sales | number: '1.0-2') +
+                  ' · تحصيل ' +
+                  (day.collected | number: '1.0-2')
+                "
+              >
+                <div class="flex h-full items-end justify-center gap-px">
+                  <div
+                    class="w-1/2 max-w-3 rounded-t-sm bg-yale-blue group-hover:opacity-80"
+                    [style.height.%]="day.salesPct"
+                  ></div>
+                  <div
+                    class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-prussian-blue-700 group-hover:opacity-80"
+                    [style.height.%]="day.collectedPct"
+                  ></div>
+                </div>
+                <span class="mt-1 text-center text-[10px] text-stormy-teal">{{ day.label }}</span>
+              </div>
+            }
+          </div>
+        </div>
       </div>
 
       <!-- Lists: empty ones are hidden -->
@@ -373,49 +416,6 @@
             </ul>
           </div>
         }
-
-        <!-- Month chart -->
-        <div class="card lg:col-span-2">
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold">حركة الشهر يوم بيوم</h2>
-            <div class="flex gap-4 text-xs text-stormy-teal">
-              <span class="flex items-center gap-1.5"
-                ><span class="size-2.5 rounded-sm bg-yale-blue"></span> مبيعات</span
-              >
-              <span class="flex items-center gap-1.5"
-                ><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-prussian-blue-700"></span>
-                تحصيل</span
-              >
-            </div>
-          </div>
-          <div class="flex h-28 items-end gap-1" dir="ltr">
-            @for (day of chart(); track day.day) {
-              <div
-                class="group flex h-full flex-1 flex-col justify-end"
-                [title]="
-                  'يوم ' +
-                  day.label +
-                  ' — مبيعات ' +
-                  (day.sales | number: '1.0-2') +
-                  ' · تحصيل ' +
-                  (day.collected | number: '1.0-2')
-                "
-              >
-                <div class="flex h-full items-end justify-center gap-px">
-                  <div
-                    class="w-1/2 max-w-3 rounded-t-sm bg-yale-blue group-hover:opacity-80"
-                    [style.height.%]="day.salesPct"
-                  ></div>
-                  <div
-                    class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-prussian-blue-700 group-hover:opacity-80"
-                    [style.height.%]="day.collectedPct"
-                  ></div>
-                </div>
-                <span class="mt-1 text-center text-[10px] text-stormy-teal">{{ day.label }}</span>
-              </div>
-            }
-          </div>
-        </div>
       </div>
     </div>
   }

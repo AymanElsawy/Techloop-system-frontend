@@ -16,9 +16,9 @@
   @if (picking()) {
     <div class="card flex flex-wrap items-end gap-3">
       <div class="min-w-64 flex-1">
-        <label for="doc-party" class="form-label">{{ createParty() === 'rep' ? 'اختر المندوب' : 'اختر العميل' }} — {{ createLabel() }}</label>
+        <label for="doc-party" class="form-label">{{ partyPrompt() }} — {{ createLabel() }}</label>
         <select id="doc-party" class="form-input" (change)="openFor(value($event))">
-          <option value="">{{ parties.isLoading() ? 'جاري التحميل...' : parties.error() ? 'تعذر التحميل' : createParty() === 'rep' ? 'اختر المندوب' : 'اختر العميل' }}</option>
+          <option value="">{{ parties.isLoading() ? 'جاري التحميل...' : parties.error() ? 'تعذر التحميل' : partyPrompt() }}</option>
           @for (p of parties.value() ?? []; track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
           }

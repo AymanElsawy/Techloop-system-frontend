@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, Page, PageParams } from '../../../core/models/api-response';
 import { getPage } from '../../../shared/paged';
-import { Supplier, SupplierInput, SupplierPayment, SupplierPaymentInput } from '../models/supplier.model';
+import { Returnable, Supplier, SupplierInput, SupplierPayment, SupplierPaymentInput } from '../models/supplier.model';
 
 @Injectable({ providedIn: 'root' })
 export class SupplierService {
@@ -31,6 +31,11 @@ export class SupplierService {
 
   updateSupplier(id: string, data: Partial<SupplierInput & { isActive: boolean }>): Observable<Supplier> {
     return this.http.patch<ApiResponse<Supplier>>(`${this.url}/${id}`, data).pipe(map(({ data }) => data));
+  }
+
+  /** مرتجع للمورد: what can still go back to this supplier; the server sets the price. */
+  getReturnable(supplierId: string): Observable<Returnable[]> {
+    return this.http.get<ApiResponse<Returnable[]>>(`${this.url}/${supplierId}/returnable`).pipe(map(({ data }) => data));
   }
 
   getPayments(supplierId: string): Observable<SupplierPayment[]> {
