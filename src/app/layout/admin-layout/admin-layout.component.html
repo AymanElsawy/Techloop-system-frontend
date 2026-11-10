@@ -11,21 +11,21 @@
   <!-- Sidebar: fixed on desktop, drawer on mobile -->
   <aside
     id="main-sidebar"
-    class="print:hidden fixed inset-y-0 start-0 z-30 h-screen w-64 shrink-0 flex-col overflow-y-auto bg-yale-blue text-white md:sticky md:top-0 md:flex keep-colors dark:bg-prussian-blue-200"
+    class="print:hidden fixed inset-y-0 start-0 z-30 h-screen w-64 shrink-0 flex-col overflow-y-auto bg-sidenav text-sidenav-fg dark:text-white md:sticky md:top-0 md:flex keep-colors dark:bg-prussian-blue-200"
     [class.hidden]="!menuOpen()"
     [class.flex]="menuOpen()"
   >
-    <div class="border-b border-yale-blue-400">
-      <img src="images/logo-tech.png" alt="Techloop" class="block h-auto w-full" />
+    <div class="border-b border-sidenav-active dark:border-yale-blue-400">
+      <img src="images/techloop-logo.png" alt="Techloop" class="block h-auto w-full" />
     </div>
     <nav class="flex-1 space-y-1 px-3 py-4" aria-label="القائمة الرئيسية">
       @for (item of navItems(); track item.path) {
         <a
           [routerLink]="item.path"
-          routerLinkActive="bg-yale-blue-400 text-white before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-full before:bg-stormy-teal-700 dark:before:bg-orange"
+          routerLinkActive="bg-sidenav-active dark:bg-yale-blue-400 text-sidenav-fg dark:text-white before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-full before:bg-sidenav-accent dark:before:bg-orange"
           ariaCurrentWhenActive="page"
           (click)="menuOpen.set(false)"
-          class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-yale-blue-900 transition hover:bg-yale-blue-400/60 hover:text-white focus-visible:outline-2 focus-visible:outline-stormy-teal-700"
+          class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidenav-fg/85 dark:text-yale-blue-900 transition hover:bg-sidenav-active/60 dark:hover:bg-yale-blue-400/60 hover:text-sidenav-fg dark:hover:text-white focus-visible:outline-2 focus-visible:outline-sidenav-accent dark:focus-visible:outline-stormy-teal-700"
         >
           <svg
             class="size-5"

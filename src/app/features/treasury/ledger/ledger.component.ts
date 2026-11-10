@@ -98,9 +98,9 @@ const LINKS: Record<NonNullable<LedgerRow['ref']>['type'], string> = {
             </p>
           </li>
           <li
-            class="card keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400"
+            class="card keep-colors bg-stormy-teal text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400"
           >
-            <p class="text-sm text-yale-blue-800">رصيد آخر المدة</p>
+            <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">رصيد آخر المدة</p>
             <p class="mt-1 text-xl font-bold tabular-nums">
               {{ l.closing | currency: 'EGP' : 'symbol' : '1.0-2' }}
             </p>

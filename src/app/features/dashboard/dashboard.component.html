@@ -75,16 +75,16 @@
           @if (d.treasury; as t) {
             <a
               routerLink="/treasury"
-              class="card keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95"
+              class="card keep-colors bg-stormy-teal text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95"
             >
-              <p class="text-sm text-yale-blue-800">رصيد الخزنة</p>
+              <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">رصيد الخزنة</p>
               <p class="mt-2 text-2xl font-bold tabular-nums">
                 {{ t.total | currency: 'EGP' : 'symbol' : '1.0-2' }}
               </p>
               <ul class="mt-2 space-y-0.5 text-xs">
                 @for (m of t.byMethod; track m.method) {
                   <li class="flex justify-between gap-2">
-                    <span class="text-yale-blue-800">{{ bucketLabels[m.method] }}</span>
+                    <span class="text-stormy-teal-900 dark:text-yale-blue-800">{{ bucketLabels[m.method] }}</span>
                     <span class="tabular-nums">{{
                       m.total | currency: 'EGP' : 'symbol' : '1.0-0'
                     }}</span>
@@ -96,13 +96,13 @@
           @if (d.cashBox; as c) {
             <a
               routerLink="/treasury"
-              class="card keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95"
+              class="card keep-colors bg-stormy-teal text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400 transition hover:opacity-95"
             >
-              <p class="text-sm text-yale-blue-800">خزنتي (لم تُسلَّم)</p>
+              <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">خزنتي (لم تُسلَّم)</p>
               <p class="mt-2 text-2xl font-bold tabular-nums">
                 {{ c.total | currency: 'EGP' : 'symbol' : '1.0-2' }}
               </p>
-              <p class="mt-1 text-xs text-yale-blue-800">{{ c.count }} مستند</p>
+              <p class="mt-1 text-xs text-stormy-teal-900 dark:text-yale-blue-800">{{ c.count }} مستند</p>
             </a>
           }
         </div>
@@ -202,10 +202,10 @@
             <h2 class="font-semibold">حركة الشهر يوم بيوم</h2>
             <div class="flex gap-4 text-xs text-stormy-teal">
               <span class="flex items-center gap-1.5"
-                ><span class="size-2.5 rounded-sm bg-yale-blue"></span> مبيعات</span
+                ><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-yale-blue"></span> مبيعات</span
               >
               <span class="flex items-center gap-1.5"
-                ><span class="size-2.5 rounded-sm bg-stormy-teal dark:bg-prussian-blue-700"></span>
+                ><span class="size-2.5 rounded-sm bg-soft-apricot-400 dark:bg-prussian-blue-700"></span>
                 تحصيل</span
               >
             </div>
@@ -225,11 +225,11 @@
               >
                 <div class="flex h-full items-end justify-center gap-px">
                   <div
-                    class="w-1/2 max-w-3 rounded-t-sm bg-yale-blue group-hover:opacity-80"
+                    class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-yale-blue group-hover:opacity-80"
                     [style.height.%]="day.salesPct"
                   ></div>
                   <div
-                    class="w-1/2 max-w-3 rounded-t-sm bg-stormy-teal dark:bg-prussian-blue-700 group-hover:opacity-80"
+                    class="w-1/2 max-w-3 rounded-t-sm bg-soft-apricot-400 dark:bg-prussian-blue-700 group-hover:opacity-80"
                     [style.height.%]="day.collectedPct"
                   ></div>
                 </div>
@@ -277,7 +277,7 @@
                       >
                         <div
                           class="h-full rounded-full"
-                          [class]="p < 50 ? 'bg-vibrant-coral-400' : 'bg-yale-blue'"
+                          [class]="p < 50 ? 'bg-vibrant-coral-400' : 'bg-stormy-teal dark:bg-yale-blue'"
                           [style.width.%]="p > 100 ? 100 : p"
                         ></div>
                       </div>

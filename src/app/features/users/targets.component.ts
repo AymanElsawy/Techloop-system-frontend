@@ -104,7 +104,7 @@ export class TargetsComponent {
 
   /** Bar colour: reached / halfway / below. */
   protected barClass(progress: number): string {
-    if (progress >= 100) return 'bg-yale-blue';
+    if (progress >= 100) return 'bg-stormy-teal dark:bg-yale-blue';
     if (progress >= 50) return 'bg-soft-apricot-300';
     return 'bg-vibrant-coral-400';
   }

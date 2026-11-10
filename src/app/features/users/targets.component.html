@@ -8,9 +8,9 @@
     </div>
     <div class="flex flex-wrap items-end gap-3">
       <div role="group" aria-label="الفترة" class="flex overflow-hidden rounded-lg border border-stormy-teal-800">
-        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="!yearly() ? 'bg-yale-blue text-white' : ''"
+        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="!yearly() ? 'bg-stormy-teal text-white dark:bg-yale-blue' : ''"
           [attr.aria-pressed]="!yearly()" (click)="yearly.set(false)">شهري</button>
-        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="yearly() ? 'bg-yale-blue text-white' : ''"
+        <button type="button" class="px-4 py-2 text-sm font-medium" [class]="yearly() ? 'bg-stormy-teal text-white dark:bg-yale-blue' : ''"
           [attr.aria-pressed]="yearly()" (click)="yearly.set(true)">سنوي</button>
       </div>
       @if (yearly()) {

@@ -6,74 +6,80 @@
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
 
-  --color-graphite: #111c22;
-  --color-graphite-100: #0c1418;
-  --color-graphite-200: #111c22;
-  --color-graphite-300: #111c22;
-  --color-graphite-400: #233843;
-  --color-graphite-500: #111c22;
-  --color-graphite-600: #345565;
-  --color-graphite-700: #457187;
-  --color-graphite-800: #78a4ba;
-  --color-graphite-900: #bcd1dc;
+  --color-graphite: #2a3933;
+  --color-graphite-100: #0b0f0d;
+  --color-graphite-200: #151d19;
+  --color-graphite-300: #1f2b26;
+  --color-graphite-400: #40564c;
+  --color-graphite-500: #2a3933;
+  --color-graphite-600: #40564c;
+  --color-graphite-700: #6b9080;
+  --color-graphite-800: #a5bdb3;
+  --color-graphite-900: #e1e9e6;
 
-  --color-stormy-teal: #045d95;
-  --color-stormy-teal-100: #011623;
-  --color-stormy-teal-200: #011f32;
-  --color-stormy-teal-300: #033e63;
-  --color-stormy-teal-400: #033e63;
-  --color-stormy-teal-500: #045d95;
-  --color-stormy-teal-600: #057dc7;
-  --color-stormy-teal-700: #0a85c2;
-  --color-stormy-teal-800: #9edbfa;
-  --color-stormy-teal-900: #cfedfc;
+  --color-stormy-teal: #557366;
+  --color-stormy-teal-100: #151d19;
+  --color-stormy-teal-200: #2a3933;
+  --color-stormy-teal-300: #354a40;
+  --color-stormy-teal-400: #40564c;
+  --color-stormy-teal-500: #557366;
+  --color-stormy-teal-600: #6b9080;
+  --color-stormy-teal-700: #87a799;
+  --color-stormy-teal-800: #a4c3b2;
+  --color-stormy-teal-900: #e1e9e6;
 
-  --color-alabaster-grey: #bcd1dc;
-  --color-alabaster-grey-100: #111c22;
-  --color-alabaster-grey-200: #345565;
-  --color-alabaster-grey-300: #578da8;
-  --color-alabaster-grey-400: #9abbcb;
-  --color-alabaster-grey-500: #bcd1dc;
-  --color-alabaster-grey-600: #dde8ee;
-  --color-alabaster-grey-700: #dde8ee;
-  --color-alabaster-grey-800: #eef4f6;
-  --color-alabaster-grey-900: #e7f6fe;
+  --color-alabaster-grey: #c3d3cc;
+  --color-alabaster-grey-100: #2a3933;
+  --color-alabaster-grey-200: #40564c;
+  --color-alabaster-grey-300: #557366;
+  --color-alabaster-grey-400: #c3d3cc;
+  --color-alabaster-grey-500: #c3d3cc;
+  --color-alabaster-grey-600: #e1e9e6;
+  --color-alabaster-grey-700: #e1e9e6;
+  --color-alabaster-grey-800: #eaf4f4;
+  --color-alabaster-grey-900: #ecf3ef;
 
-  --color-yale-blue: #233843;
-  --color-yale-blue-100: #0c1418;
-  --color-yale-blue-200: #111c22;
-  --color-yale-blue-300: #111c22;
-  --color-yale-blue-400: #345565;
-  --color-yale-blue-500: #233843;
-  --color-yale-blue-600: #457187;
-  --color-yale-blue-700: #578da8;
-  --color-yale-blue-800: #bcd1dc;
-  --color-yale-blue-900: #dde8ee;
+  --color-yale-blue: #2a3933;
+  --color-yale-blue-100: #0b0f0d;
+  --color-yale-blue-200: #151d19;
+  --color-yale-blue-300: #1f2b26;
+  --color-yale-blue-400: #40564c;
+  --color-yale-blue-500: #2a3933;
+  --color-yale-blue-600: #40564c;
+  --color-yale-blue-700: #6b9080;
+  --color-yale-blue-800: #a5bdb3;
+  --color-yale-blue-900: #dae7e0;
 
-  /* Status colors: warning (apricot) and danger (coral). */
-  --color-soft-apricot: #fed9b7;
-  --color-soft-apricot-100: #562a01;
-  --color-soft-apricot-200: #ad5503;
-  --color-soft-apricot-300: #fb800c;
-  --color-soft-apricot-400: #fdad62;
-  --color-soft-apricot-500: #fed9b7;
-  --color-soft-apricot-600: #fee2c7;
-  --color-soft-apricot-700: #fee9d5;
-  --color-soft-apricot-800: #fff0e3;
-  --color-soft-apricot-900: #fff8f1;
+  /* Status colors: warning (golden-pollen) and danger (brick-ember / blood-red). */
+  --color-soft-apricot: #fcca46;
+  --color-soft-apricot-100: #3f3312;
+  --color-soft-apricot-200: #65511c;
+  --color-soft-apricot-300: #8b6f27;
+  --color-soft-apricot-400: #d6ac3c;
+  --color-soft-apricot-500: #fcca46;
+  --color-soft-apricot-600: #fcca46;
+  --color-soft-apricot-700: #fcca46;
+  --color-soft-apricot-800: #feeab5;
+  --color-soft-apricot-900: #fef4da;
 
-  --color-vibrant-coral: #ff3333;
-  --color-vibrant-coral-100: #660000;
-  --color-vibrant-coral-200: #990000;
-  --color-vibrant-coral-300: #cc0000;
-  --color-vibrant-coral-400: #cc0000;
-  --color-vibrant-coral-500: #ff3333;
-  --color-vibrant-coral-600: #ff6666;
-  --color-vibrant-coral-700: #ff9999;
-  --color-vibrant-coral-800: #ffcccc;
-  --color-vibrant-coral-900: #ffe5e5;
+  --color-vibrant-coral: #bf0603;
+  --color-vibrant-coral-100: #4c0201;
+  --color-vibrant-coral-200: #730402;
+  --color-vibrant-coral-300: #8d0801;
+  --color-vibrant-coral-400: #bf0603;
+  --color-vibrant-coral-500: #bf0603;
+  --color-vibrant-coral-600: #d2514f;
+  --color-vibrant-coral-700: #e59b9a;
+  --color-vibrant-coral-800: #efc1c0;
+  --color-vibrant-coral-900: #f9e6e6;
 
   --color-surface: #ffffff;
+
+  /* Sidebar (light): its own tokens so each palette can pick a light or dark sidebar. */
+  --color-sidenav: #cce3de;
+  --color-sidenav-active: #a4c3b2;
+  --color-sidenav-fg: #2a3933;
+  --color-sidenav-accent: #557366;
 
   /* Dark mode palettes. Names kept from older palettes:
      prussian-blue = dark base (ink-black / deep-space-blue / blue-slate), orange = accent (eggshell). */
@@ -106,13 +112,13 @@
     active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(35_56_67/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
+  @apply btn bg-stormy-teal text-white shadow-[0_1px_0_rgb(42_57_51/0.25)] hover:bg-stormy-teal-400 dark:bg-orange dark:text-black dark:hover:bg-orange-600;
 }
 @utility btn-outline {
   @apply btn border border-stormy-teal bg-surface text-stormy-teal hover:bg-stormy-teal-900/60;
 }
 @utility card {
-  @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(35_56_67/0.05),0_4px_12px_-6px_rgb(35_56_67/0.08)];
+  @apply rounded-xl border border-stormy-teal-900 bg-surface p-5 shadow-[0_1px_2px_rgb(42_57_51/0.05),0_4px_12px_-6px_rgb(42_57_51/0.08)];
 }
 /* <details class="accordion"><summary><h2>…</h2> meta</summary> body</details>: a collapsible card section. */
 @utility accordion {
@@ -192,7 +198,7 @@ select.form-input {
   cursor: pointer;
   padding-inline-end: 2.5rem;
   min-width: 10rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23045d95' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23557366' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: left 0.75rem center;
   background-size: 1.1rem;

@@ -8,16 +8,16 @@
       <app-status-message type="error" message="حدث خطأ أثناء تحميل الخزنة." (retry)="summary.reload()" />
     } @else if (summary.value(); as s) {
       <!-- Balance strip: total + per-bucket on one row, so nothing stretches empty beside the reps list. -->
-      <div class="card keep-colors flex flex-wrap items-center gap-x-10 gap-y-4 bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400">
+      <div class="card keep-colors flex flex-wrap items-center gap-x-10 gap-y-4 bg-stormy-teal text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400">
         <div>
-          <p class="text-sm text-yale-blue-800">رصيد خزنة الشركة</p>
+          <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">رصيد خزنة الشركة</p>
           <p class="mt-1 text-3xl font-bold tabular-nums">{{ s.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
         </div>
-        <ul class="flex flex-wrap gap-x-8 gap-y-3 border-yale-blue-400 sm:border-s sm:ps-10">
+        <ul class="flex flex-wrap gap-x-8 gap-y-3 border-stormy-teal-400 dark:border-yale-blue-400 sm:border-s sm:ps-10">
           @for (m of s.byMethod; track m.method) {
             @if (m.method !== 'CHEQUE') {
               <li>
-                <p class="text-sm text-yale-blue-800">{{ bucketLabels[m.method] }}</p>
+                <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">{{ bucketLabels[m.method] }}</p>
                 <p class="mt-1 text-lg font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
               </li>
             }
@@ -25,14 +25,14 @@
         </ul>
         @if (openCheques(); as c) {
           <!-- Not money yet: shown beside the balance, never added to it. -->
-          <div class="sm:border-s sm:border-yale-blue-400 sm:ps-10">
-            <p class="text-sm text-yale-blue-800">{{ bucketLabels[c.method] }} ({{ c.count }})</p>
+          <div class="sm:border-s sm:border-stormy-teal-400 dark:sm:border-yale-blue-400 sm:ps-10">
+            <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">{{ bucketLabels[c.method] }} ({{ c.count }})</p>
             <p class="mt-1 text-lg font-semibold tabular-nums">{{ c.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
-            <p class="text-xs text-yale-blue-800">مش محسوبة في الرصيد لحد ما تتصرف</p>
+            <p class="text-xs text-stormy-teal-900 dark:text-yale-blue-800">مش محسوبة في الرصيد لحد ما تتصرف</p>
           </div>
         }
         <div class="flex w-full flex-wrap items-center justify-between gap-3">
-          <p class="text-xs text-yale-blue-800">الرصيد = اللي دخل − اللي خرج. لو مش مطابق للفلوس الفعلية اعمل جرد.</p>
+          <p class="text-xs text-stormy-teal-900 dark:text-yale-blue-800">الرصيد = اللي دخل − اللي خرج. لو مش مطابق للفلوس الفعلية اعمل جرد.</p>
           <div class="flex gap-2">
             <a routerLink="/treasury/ledger" class="btn-outline dark:border-orange dark:bg-transparent dark:text-orange dark:hover:bg-prussian-blue-600">حركة الخزنة</a>
             <button type="button" class="btn-outline dark:border-orange dark:bg-transparent dark:text-orange dark:hover:bg-prussian-blue-600" (click)="countDialog.open()">جرد</button>
@@ -71,21 +71,21 @@
     } @else if (pending.error()) {
       <app-status-message type="error" message="حدث خطأ أثناء تحميل خزنتك." (retry)="pending.reload()" />
     } @else {
-      <div class="card flex flex-wrap items-end justify-between gap-4 keep-colors bg-yale-blue text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400">
+      <div class="card flex flex-wrap items-end justify-between gap-4 keep-colors bg-stormy-teal text-white dark:border-prussian-blue-600 dark:bg-prussian-blue-400">
         <div>
-          <p class="text-sm text-yale-blue-800">معك لم يُسلَّم للخزنة</p>
+          <p class="text-sm text-stormy-teal-900 dark:text-yale-blue-800">معك لم يُسلَّم للخزنة</p>
           <p class="mt-2 text-3xl font-bold tabular-nums">{{ (cashBox.value()?.total ?? pendingTotal()) | currency: 'EGP' : 'symbol' : '1.0-2' }}</p>
         </div>
         <ul class="space-y-1 text-sm">
           @if (cashBox.value()?.expenses) {
             <li class="flex justify-between gap-6">
-              <span class="text-yale-blue-800">مصروفات</span>
+              <span class="text-stormy-teal-900 dark:text-yale-blue-800">مصروفات</span>
               <span class="font-semibold tabular-nums">− {{ cashBox.value()!.expenses | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
             </li>
           }
           @for (m of pendingByMethod(); track m.method) {
             <li class="flex justify-between gap-6">
-              <span class="text-yale-blue-800">{{ methodLabels[m.method] }} ({{ m.count }})</span>
+              <span class="text-stormy-teal-900 dark:text-yale-blue-800">{{ methodLabels[m.method] }} ({{ m.count }})</span>
               <span class="font-semibold tabular-nums">{{ m.total | currency: 'EGP' : 'symbol' : '1.0-2' }}</span>
             </li>
           }
